@@ -12,7 +12,7 @@ agent that produces the traces.
   "max_verification_cost_usd": 0.05,
   "verifiers": [
     {"name": "budget.steps", "params": {"max_steps": 40}},
-    {"name": "diff.forbidden_paths", "params": {"forbidden": ["ci/", ".github/"]}},
+    {"name": "diff.forbidden_paths", "params": {"forbidden": ["ci/", ".github/workflows/"]}},
     {"name": "tests.integrity", "params": {"protected_prefixes": ["tests/"]}},
     {"name": "tests.pass"}
   ]

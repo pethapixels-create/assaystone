@@ -1,8 +1,9 @@
+import tempfile
 import unittest
 from pathlib import Path
 
 from assaystone.backtest import backtest
-from assaystone.contract import Contract
+from assaystone.contract import Contract, VerifierSpec
 from assaystone.model import Artifact, Trace
 from assaystone.mutate import generate_mutants
 from assaystone.runner import run_contract
@@ -77,6 +78,60 @@ class AssaystoneTest(unittest.TestCase):
         with Workspace(self.baseline) as workspace:
             with self.assertRaises(ValueError):
                 workspace.apply([Artifact("../escape.py", "print('x')")])
+
+    def test_workspace_ignores_heavy_directories(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            baseline = Path(tmp) / "baseline"
+            (baseline / "src").mkdir(parents=True)
+            (baseline / "src" / "a.py").write_text("x = 1\n", encoding="utf-8")
+            (baseline / "node_modules").mkdir()
+            (baseline / "node_modules" / "pkg.js").write_text("x\n", encoding="utf-8")
+            (baseline / ".git").mkdir()
+            (baseline / ".git" / "config").write_text("x\n", encoding="utf-8")
+            with Workspace(baseline) as workspace:
+                self.assertTrue((workspace.root / "src" / "a.py").exists())
+                self.assertFalse((workspace.root / "node_modules").exists())
+                self.assertFalse((workspace.root / ".git").exists())
+
+    def test_workspace_refuses_home(self):
+        with self.assertRaises(ValueError):
+            Workspace(Path.home())
+
+    def test_forbidden_paths_narrows_github_to_workflows(self):
+        contract = Contract(
+            name="policy", verifiers=[VerifierSpec("diff.forbidden_paths")]
+        )
+        issue = Trace(
+            id="issue",
+            task="",
+            artifacts=[
+                Artifact(".github/ISSUE_TEMPLATE/bug.md", "template\n", "modified")
+            ],
+        )
+        self.assertEqual(run_contract(contract, issue, self.baseline).verdict, "pass")
+        workflow = Trace(
+            id="workflow",
+            task="",
+            artifacts=[Artifact(".github/workflows/ci.yml", "name: ci\n", "modified")],
+        )
+        self.assertEqual(run_contract(contract, workflow, self.baseline).verdict, "fail")
+
+    def test_no_debug_prints_ignores_cli_and_examples(self):
+        contract = Contract(
+            name="quality", verifiers=[VerifierSpec("quality.no_debug_prints")]
+        )
+        cli = Trace(
+            id="cli",
+            task="",
+            artifacts=[Artifact("cli.py", "print('usage')\n", "modified")],
+        )
+        self.assertEqual(run_contract(contract, cli, self.baseline).verdict, "pass")
+        app = Trace(
+            id="app",
+            task="",
+            artifacts=[Artifact("src/app.py", "print('debug')\n", "modified")],
+        )
+        self.assertEqual(run_contract(contract, app, self.baseline).verdict, "fail")
 
 
 if __name__ == "__main__":

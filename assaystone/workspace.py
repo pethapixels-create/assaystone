@@ -11,13 +11,39 @@ from typing import Iterable
 
 from .model import Artifact
 
+_IGNORE = shutil.ignore_patterns(
+    ".git",
+    "node_modules",
+    ".venv",
+    "venv",
+    "__pycache__",
+    "*.pyc",
+    "dist",
+    "build",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".tox",
+    ".idea",
+    "target",
+    "vendor",
+    ".next",
+    ".nuxt",
+    "coverage",
+)
+
 
 class Workspace:
     def __init__(self, baseline: str | Path):
         self.baseline = Path(baseline).resolve()
+        if self.baseline in {Path.home().resolve(), Path("/")}:
+            raise ValueError(
+                "refusing to copy the home directory or filesystem root as a workspace; "
+                "point --baseline at the project root"
+            )
         self._tmp = tempfile.TemporaryDirectory(prefix="assaystone-")
         self.root = Path(self._tmp.name) / "repo"
-        shutil.copytree(self.baseline, self.root)
+        shutil.copytree(self.baseline, self.root, ignore=_IGNORE)
         self.changed: list[tuple[str, str]] = []
 
     def __enter__(self) -> "Workspace":

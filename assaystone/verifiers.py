@@ -150,7 +150,7 @@ class DiffForbiddenPaths(Verifier):
     description = "The patch must not touch protected paths."
 
     def check(self, ctx: VerifyContext, params: dict[str, Any]) -> Check:
-        forbidden = list(params.get("forbidden") or ["ci/", ".github/", "Makefile", "pyproject.toml"])
+        forbidden = list(params.get("forbidden") or ["ci/", ".github/workflows/", "Makefile", "pyproject.toml"])
         violations = [
             f"{path} ({change})"
             for path, change in ctx.changed()
@@ -258,9 +258,20 @@ class NoDebugPrints(Verifier):
     description = "Changed Python code must not contain debug print/breakpoint calls."
 
     def check(self, ctx: VerifyContext, params: dict[str, Any]) -> Check:
+        exclude_prefixes = list(
+            params.get("exclude_prefixes") or ["tests/", "examples/", "scripts/"]
+        )
+        exclude_names = set(
+            params.get("exclude_names")
+            or ["cli.py", "__main__.py", "manage.py", "conftest.py"]
+        )
         reasons: list[str] = []
         for path, change in ctx.changed():
             if change == "deleted" or not path.endswith(".py"):
+                continue
+            if Path(path).name in exclude_names:
+                continue
+            if any(_path_under(path, prefix) for prefix in exclude_prefixes):
                 continue
             try:
                 tree = ast.parse(ctx.current_text(path), filename=path)
@@ -276,7 +287,12 @@ class NoDebugPrints(Verifier):
         return (not reasons, reasons, [f"found {len(reasons)} debug call(s)"])
 
 
-_PASS_CLAIM = re.compile(r"\ball\s+tests?\s+(?:pass|passing|green)\b", re.IGNORECASE)
+_PASS_CLAIM = re.compile(
+    r"\b(?:all\s+)?tests?\s+(?:are\s+)?(?:pass|passing|green|clean)\b"
+    r"|\b(?:test\s+)?suite\s+(?:is\s+)?green\b"
+    r"|\btests?\s+look\s+good\b",
+    re.IGNORECASE,
+)
 
 
 @register

@@ -7,9 +7,11 @@ or a flat list of spans. Tool spans are detected from ``gen_ai.operation.name`` 
 from __future__ import annotations
 
 import json
+import warnings
 from pathlib import Path
 from typing import Any
 
+from ..jsonl import read_jsonl
 from ..model import Trace
 from .common import ToolRecord, as_args, extract_text, stringify, trace_from_records
 
@@ -18,11 +20,13 @@ _TOOL_OPS = {"execute_tool", "tool", "tool_call", "invoke_tool"}
 
 def _read_export(path: Path) -> Any:
     if path.suffix.lower() == ".jsonl":
-        entries = []
-        for line in path.read_text(encoding="utf-8").splitlines():
-            line = line.strip()
-            if line:
-                entries.append(json.loads(line))
+        entries, errors = read_jsonl(path)
+        if errors:
+            warnings.warn(
+                f"{path.name}: skipped {len(errors)} invalid JSONL line(s)",
+                RuntimeWarning,
+                stacklevel=2,
+            )
         return entries
     return json.loads(path.read_text(encoding="utf-8"))
 

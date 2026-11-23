@@ -34,7 +34,12 @@ class VerifyReportsTest(unittest.TestCase):
             data = json.loads(path.read_text(encoding="utf-8"))
             self.assertEqual(data["version"], "2.1.0")
             results = data["runs"][0]["results"]
-            self.assertTrue(any(result["ruleId"] == "tests.integrity" for result in results))
+            integrity = [result for result in results if result["ruleId"] == "tests.integrity"]
+            self.assertTrue(integrity)
+            self.assertEqual(
+                integrity[0]["locations"][0]["physicalLocation"]["artifactLocation"]["uri"],
+                "tests/test_discounts.py",
+            )
             self.assertTrue(any(result["level"] == "error" for result in results))
 
     def test_junit(self):
@@ -65,6 +70,10 @@ class AuditReportsTest(unittest.TestCase):
             results = data["runs"][0]["results"]
             self.assertEqual(len(results), 1)
             self.assertEqual(results[0]["ruleId"], "tests.integrity")
+            self.assertEqual(
+                results[0]["locations"][0]["physicalLocation"]["artifactLocation"]["uri"],
+                "tests/test_discounts.py",
+            )
 
     def test_audit_junit(self):
         with tempfile.TemporaryDirectory() as tmp:

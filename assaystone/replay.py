@@ -4,6 +4,7 @@ Shared by the message/transcript audit and by the LangSmith / Langfuse importers
 """
 from __future__ import annotations
 
+import json
 import re
 import subprocess
 import tempfile
@@ -171,14 +172,27 @@ def artifacts_with_fallback(
     return replayed
 
 
-_TEST_COMMAND_TOKENS = (
-    "test",
-    "pytest",
-    "unittest",
-    "jest",
-    "vitest",
-    "rspec",
-    "ctest",
+_TEST_RUNNER = re.compile(
+    r"(?:^|[;&|]\s*)(?:"
+    r"pytest|"
+    r"python(?:[0-9.]+)?\s+-m\s+(?:pytest|unittest)|"
+    r"npm\s+(?:run\s+)?test|"
+    r"pnpm\s+test|"
+    r"yarn\s+test|"
+    r"npx\s+(?:jest|vitest)|"
+    r"go\s+test|"
+    r"cargo\s+test|"
+    r"mvn\s+[^;&|]*\btest\b|"
+    r"(?:\./)?mvnw\s+[^;&|]*\btest\b|"
+    r"gradle\s+[^;&|]*\btest\b|"
+    r"(?:\./)?gradlew\s+[^;&|]*\btest\b|"
+    r"jest|"
+    r"vitest|"
+    r"rspec|"
+    r"dotnet\s+test|"
+    r"ctest"
+    r")\b",
+    re.IGNORECASE,
 )
 
 
@@ -241,39 +255,62 @@ def git_preimage(repo: str | Path, paths: Iterable[str]) -> tempfile.TemporaryDi
     return temporary
 
 
+def _result_text(value: Any) -> str:
+    text = str(value or "")
+    stripped = text.strip()
+    if stripped.startswith("{") and stripped.endswith("}"):
+        try:
+            data = json.loads(stripped)
+        except json.JSONDecodeError:
+            return text
+        if isinstance(data, dict):
+            for key in ("output", "result", "text", "content"):
+                if key in data:
+                    inner = data[key]
+                    if isinstance(inner, (dict, list)):
+                        return json.dumps(inner, ensure_ascii=False)
+                    return str(inner)
+    return text
+
+
+def _test_outcome(output: str, ok: bool) -> int | None:
+    if not ok:
+        return 1
+    text = output.lower()
+    if "build failure" in text or "build failed" in text:
+        return 1
+    if re.search(r"failures?=\s*[1-9]\d*", text):
+        return 1
+    if re.search(r"\b[1-9]\d*\s+(?:failed|failure|failures|errors?)\b", text):
+        return 1
+    if re.search(r"(?:^|\n)\s*failed\b", text) or "traceback" in text:
+        return 1
+    zero = re.search(r"\b0\s+(?:failed|failures?|errors?)\b", text) or "no failures" in text
+    passed = re.search(r"\b[1-9]\d*\s+passed\b", text)
+    success = (
+        zero
+        or passed
+        or re.search(r"(?:^|\n)\s*ok\b", text)
+        or "build success" in text
+        or "tests passed" in text
+        or "all tests passed" in text
+        or "test run successful" in text
+    )
+    return 0 if success else None
+
+
 def infer_test_evidence(trace: Trace) -> None:
-    """Infer test_exit_code from the last test-like Bash/Shell step."""
+    """Infer test_exit_code from the last test-runner step, or leave it unset."""
     code: int | None = None
     for step in trace.steps:
         tool = step.tool.lower()
         if tool not in {"bash", "shell", "run_tests", "execute_command", "terminal"}:
             continue
-        command = str(step.args.get("command") or step.args.get("cmd") or "").lower()
-        if not any(token in command for token in _TEST_COMMAND_TOKENS):
+        command = str(step.args.get("command") or step.args.get("cmd") or "")
+        if not _TEST_RUNNER.search(command):
             continue
-        output = (step.result or "").lower()
-        zero_failures = bool(re.search(r"\b0 (failed|failures?|errors?)\b", output))
-        failed = (not step.ok) or (
-            not zero_failures
-            and (
-                "failed" in output
-                or "failure" in output
-                or "traceback" in output
-                or "build failure" in output
-                or "exit code 1" in output
-            )
-        )
-        success = (
-            zero_failures
-            or "build success" in output
-            or "ok" in output
-            or "passed" in output
-            or "passing" in output
-            or "success" in output
-        )
-        if failed:
-            code = 1
-        elif success:
-            code = 0
+        outcome = _test_outcome(_result_text(step.result), step.ok)
+        if outcome is not None:
+            code = outcome
     if code is not None:
         trace.evidence.setdefault("test_exit_code", code)

@@ -16,9 +16,14 @@ def _attr(value: str) -> str:
     return xml_escape(value, {'"': "&quot;"})
 
 
-def _location(trace: Trace | None) -> str:
+def _location(trace: Trace | None, reasons: Sequence[str] | None = None) -> str:
     if trace and trace.artifacts:
-        return trace.artifacts[0].path
+        paths = [artifact.path for artifact in trace.artifacts]
+        for reason in reasons or []:
+            for path in paths:
+                if path in reason:
+                    return path
+        return paths[0]
     return trace.id if trace else "assaystone"
 
 
@@ -68,7 +73,9 @@ def write_sarif(
                     "locations": [
                         {
                             "physicalLocation": {
-                                "artifactLocation": {"uri": _location(trace)}
+                                "artifactLocation": {
+                                    "uri": _location(trace, verdict.reasons)
+                                }
                             }
                         }
                     ],
@@ -101,7 +108,9 @@ def write_audit_sarif(
                 "locations": [
                     {
                         "physicalLocation": {
-                            "artifactLocation": {"uri": _location(trace)}
+                            "artifactLocation": {
+                                "uri": _location(trace, finding.reasons)
+                            }
                         }
                     }
                 ],

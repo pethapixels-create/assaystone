@@ -29,7 +29,7 @@ def _detect_protected(root: Path) -> list[str]:
 
 
 def _detect_forbidden(root: Path) -> list[str]:
-    candidates = ["ci/", ".github/", "Makefile", "pyproject.toml", "package.json", "Dockerfile"]
+    candidates = ["ci/", ".github/workflows/", ".github/actions/", "Makefile", "pyproject.toml", "package.json", "Dockerfile"]
     return [path for path in candidates if (root / path.rstrip("/")).exists()]
 
 
@@ -37,7 +37,7 @@ def build_contract(root: str | Path) -> tuple[dict[str, Any], str | None]:
     root = Path(root).resolve()
     test_command, has_tests = _detect_test_command(root)
     protected = _detect_protected(root) or ["tests/"]
-    forbidden = _detect_forbidden(root) or ["ci/", ".github/"]
+    forbidden = _detect_forbidden(root) or ["ci/", ".github/workflows/"]
 
     verifiers: list[dict[str, Any]] = [
         {"name": "budget.steps", "required": True, "params": {"max_steps": 40}},

@@ -7,6 +7,7 @@ rule set, and reports findings plus a suggested contract.
 from __future__ import annotations
 
 import json
+import warnings as pywarnings
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable, Sequence
@@ -15,6 +16,7 @@ from .adapters.messages import artifacts_from_git, from_messages
 from .contract import Contract
 from .importers import detect_import_format, load_langfuse, load_langsmith, load_otel
 from .init import build_contract
+from .jsonl import read_jsonl
 from .model import ESCALATE, FAIL, Artifact, Trace
 from .replay import (
     artifacts_with_fallback,
@@ -122,6 +124,7 @@ def _trace_from_messages(
     git_repo: str | Path | None,
     baseline: str | Path | None,
     workspace: bool = False,
+    parse_warnings: list[str] | None = None,
 ) -> Trace:
     artifacts: list[Artifact] = []
     if workspace and baseline:
@@ -140,21 +143,14 @@ def _trace_from_messages(
     )
     if not trace.task:
         trace.task = trace.input.splitlines()[0][:200] if trace.input else ""
+    if parse_warnings:
+        trace.evidence["parse_warnings"] = list(parse_warnings)
     infer_test_evidence(trace)
     return trace
 
 
-def _read_jsonl(path: Path) -> list[Any]:
-    entries: list[Any] = []
-    for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            entries.append(json.loads(line))
-        except json.JSONDecodeError as exc:
-            raise AuditError(f"{path}:{number}: invalid JSON ({exc})") from exc
-    return entries
+def _read_jsonl(path: Path) -> tuple[list[Any], list[str]]:
+    return read_jsonl(path)
 
 
 def _session_id(entries: Sequence[Any]) -> str | None:
@@ -209,7 +205,9 @@ def _load_file(
         return _load_import(path, format, git_repo=git_repo, baseline=baseline, workspace=workspace)
 
     if suffix == ".jsonl":
-        entries = _read_jsonl(path)
+        entries, jsonl_errors = _read_jsonl(path)
+        if not entries:
+            raise AuditError(f"{path}: no valid JSONL entries")
         if format == "trace":
             raise AuditError(f"{path}: expected a single trace JSON, got JSONL")
         if format == "auto":
@@ -229,6 +227,7 @@ def _load_file(
                     git_repo=git_repo,
                     baseline=baseline,
                     workspace=workspace,
+                    parse_warnings=jsonl_errors,
                 )
             ]
         return [
@@ -240,6 +239,7 @@ def _load_file(
                 git_repo=git_repo,
                 baseline=baseline,
                 workspace=workspace,
+                parse_warnings=jsonl_errors,
             )
         ]
 
@@ -260,7 +260,7 @@ def _load_file(
         and isinstance(data, dict)
         and {"id", "artifacts", "steps"} <= set(data)
     ):
-        if not isinstance(data, dict):
+        if not isinstance(data, dict) or not {"id", "artifacts", "steps"} <= set(data):
             raise AuditError(f"{path}: expected a trace object")
         trace = Trace.from_dict(data)
         if not trace.artifacts:
@@ -338,7 +338,8 @@ def load_audit_traces(
     source = Path(source)
     if not source.exists():
         raise AuditError(f"source not found: {source}")
-    if source.is_dir():
+    is_directory = source.is_dir()
+    if is_directory:
         files = sorted(
             path for path in source.rglob("*") if path.suffix.lower() in (".json", ".jsonl")
         )
@@ -349,15 +350,24 @@ def load_audit_traces(
 
     traces: list[Trace] = []
     for path in files:
-        traces.extend(
-            _load_file(
-                path,
-                format=format,
-                git_repo=git_repo,
-                baseline=baseline,
-                workspace=workspace,
+        try:
+            traces.extend(
+                _load_file(
+                    path,
+                    format=format,
+                    git_repo=git_repo,
+                    baseline=baseline,
+                    workspace=workspace,
+                )
             )
-        )
+        except AuditError as exc:
+            if not is_directory:
+                raise
+            pywarnings.warn(
+                f"skipping unreadable trace {path.name}: {exc}",
+                RuntimeWarning,
+                stacklevel=2,
+            )
     return traces
 
 
@@ -479,6 +489,8 @@ def audit_traces(
                         evidence=verdict.evidence,
                     )
                 )
+        for parse_warning in trace.evidence.get("parse_warnings") or []:
+            warnings.append(f"{trace.id}: skipped JSONL {parse_warning}")
         if not trace.artifacts:
             warnings.append(f"{trace.id}: no artifacts; diff-based checks skipped")
     findings.sort(key=lambda f: (-_RANK.get(f.severity, 0), f.trace_id, f.verifier))

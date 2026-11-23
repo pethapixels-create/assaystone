@@ -32,6 +32,26 @@ class TestEvidenceTest(unittest.TestCase):
     def test_non_test_command(self):
         self.assertIsNone(self._infer("ls", "OK"))
 
+    def test_grep_token_in_tests_is_not_a_test_run(self):
+        self.assertIsNone(
+            self._infer('grep -rn "token" test/fixtures', "api token found: abc123")
+        )
+
+    def test_latest_is_not_a_test_run(self):
+        self.assertIsNone(self._infer("latest-release", "ok"))
+
+    def test_no_tests_ran_is_unknown(self):
+        self.assertIsNone(self._infer("pytest", "no tests ran in 0.01s"))
+
+    def test_failed_summary(self):
+        self.assertEqual(self._infer("pytest", "FAILED (failures=1)"), 1)
+
+    def test_zero_failures_is_success(self):
+        self.assertEqual(self._infer("npm test", "Tests: 0 failed, 5 passed"), 0)
+
+    def test_build_success_is_success(self):
+        self.assertEqual(self._infer("mvn test", "BUILD SUCCESS"), 0)
+
     def test_git_preimage_from_subdirectory(self):
         with tempfile.TemporaryDirectory() as tmp:
             repo = Path(tmp)

@@ -7,7 +7,7 @@
   "verifiers": [
     {"name": "budget.steps", "required": true, "params": {"max_steps": 12}},
     {"name": "diff.syntax", "required": true},
-    {"name": "diff.forbidden_paths", "required": true, "params": {"forbidden": ["ci/", ".github/", "Makefile", "pyproject.toml"]}},
+    {"name": "diff.forbidden_paths", "required": true, "params": {"forbidden": ["ci/", ".github/workflows/", "Makefile", "pyproject.toml"]}},
     {"name": "tests.integrity", "required": true, "params": {"protected_prefixes": ["tests/"]}},
     {"name": "diff.max_lines", "required": true, "params": {"max_changed_lines": 60}},
     {"name": "diff.public_api", "required": true},
