@@ -216,11 +216,11 @@ def test_agent_run(assaystone):
 ### GitHub Action
 
 ```yaml
-- uses: yellowsand1/assaystone@v0.4.0
+- uses: yellowsand1/assaystone@v0.4.1
   with:
     contract: .assaystone/contract.json
     traces: .assaystone/traces
-    install: assaystone==0.4.0   # optional; default installs the action repo
+    install: assaystone==0.4.1   # optional; default installs the action repo
 ```
 
 Failures become PR annotations; a Markdown summary is written to the job summary.
@@ -379,7 +379,7 @@ tests/                 # unit + integration tests
 
 ## Status and roadmap
 
-`v0.4.0` — alpha. The core is domain-agnostic; the code/test and ops/refund packs
+`v0.4.1` — alpha. The core is domain-agnostic; the code/test and ops/refund packs
 ship today.
 
 - [x] audit: Claude Code transcripts, message exports, trace JSON

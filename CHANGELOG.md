@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.1 — 2026-11-23
+
+- Packaging fix: generated GitHub workflows now pin `v0.4.1`, and the README/Action
+  metadata reflect the 0.4.x release. No verifier behavior changes.
+
 ## 0.4.0 — 2026-11-23
 
 - LangGraph (`LangGraphGuard`) and OpenAI Agents SDK (`run_with_verification`)

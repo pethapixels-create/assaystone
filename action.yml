@@ -21,7 +21,7 @@ inputs:
     required: false
     default: "3.11"
   install:
-    description: Optional pip install spec, for example "assaystone==0.4.0". Defaults to installing this action's repository.
+    description: Optional pip install spec, for example "assaystone==0.4.1". Defaults to installing this action's repository.
     required: false
     default: ""
 
