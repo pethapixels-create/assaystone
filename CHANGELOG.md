@@ -4,8 +4,19 @@
 
 - LangGraph (`LangGraphGuard`) and OpenAI Agents SDK (`run_with_verification`)
   runtime wrappers
+- strict, newline-only JSONL parsing; invalid lines are skipped with a warning instead
+  of corrupting a record on U+0085/U+2028
+- SARIF locations now point at the artifact named in the finding
+- test evidence is inferred only from explicit runner commands and structured outcomes
+- workspace copies skip heavy directories and refuse the home directory or filesystem
+  root
+- forbidden defaults narrowed to `.github/workflows/` and `.github/actions/`; debug
+  prints in CLI/example/script paths are ignored
+- unreadable files in a trace directory are skipped with a warning; invalid trace
+  shapes are rejected before `Trace.from_dict`
 - field-note manual triage: 0 confirmed test tampering in the five strongest
   candidates; the path-based rule surfaces activity, not intent
+- generated GitHub workflows pin the released action tag instead of `@main`
 
 ## 0.3.1
 

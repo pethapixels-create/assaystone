@@ -4,11 +4,10 @@ from pathlib import Path
 
 from assaystone.backtest import backtest
 from assaystone.contract import Contract, VerifierSpec
-from assaystone.model import Artifact, Trace
+from assaystone.model import Artifact, Trace, load_traces
 from assaystone.mutate import generate_mutants
 from assaystone.runner import run_contract
 from assaystone.workspace import Workspace
-from examples.code_agent import scenarios
 
 REPO = Path(__file__).resolve().parent.parent
 EXAMPLES = REPO / "examples" / "code_agent"
@@ -20,7 +19,7 @@ class AssaystoneTest(unittest.TestCase):
         cls.baseline = EXAMPLES / "baseline"
         cls.naive = Contract.load(EXAMPLES / "contracts" / "naive.json")
         cls.hardened = Contract.load(EXAMPLES / "contracts" / "hardened.json")
-        cls.traces = scenarios.write_traces()
+        cls.traces = load_traces(EXAMPLES / "traces")
         cls.by_id = {trace.id: trace for trace in cls.traces}
 
     def test_trace_roundtrip(self):

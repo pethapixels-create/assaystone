@@ -3,9 +3,9 @@ from pathlib import Path
 
 from assaystone.backtest import backtest
 from assaystone.contract import Contract
+from assaystone.model import load_traces
 from assaystone.runner import run_contract
 from assaystone.runtime import ApprovalRequired, ContractFailed, RuntimeGuard
-from examples.ops_agent import scenarios
 
 REPO = Path(__file__).resolve().parent.parent
 OPS = REPO / "examples" / "ops_agent"
@@ -14,7 +14,7 @@ OPS = REPO / "examples" / "ops_agent"
 class OpsPackTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.traces = scenarios.write_traces()
+        cls.traces = load_traces(OPS / "traces")
         cls.by_id = {trace.id: trace for trace in cls.traces}
         cls.amount_only = Contract.load(OPS / "contracts" / "amount_only.json")
         cls.hardened = Contract.load(OPS / "contracts" / "hardened.json")

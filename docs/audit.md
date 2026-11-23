@@ -89,15 +89,16 @@ just the first:
 | `budget.steps` | low | runaway loops |
 
 `--run-tests` adds `tests.pass` (it executes the repository's test command). It is off
-by default because the audit should be safe to run on any checkout.
+by default because the audit should be safe to run on any checkout. The command runs
+in a temporary copy of the baseline, not a sandbox; only audit repositories you trust.
 
 ## Test evidence
 
-For a `Bash` / `Shell` step whose command mentions tests, the audit infers
-`test_exit_code` from the tool result: `FAILED`, `Traceback`, or an error means `1`;
-`OK`, `passed`, or `pass` means `0`. The last test run wins. This lets
-`evidence.claims` catch "all tests pass" when the recorded run says otherwise. It is a
-heuristic; pass explicit evidence when you have it.
+For a `Bash` / `Shell` step that runs a known test runner (`pytest`, `npm test`,
+`go test`, and similar), the audit infers `test_exit_code` from the step's success
+flag and structured output. Ambiguous output leaves the evidence unset instead of
+guessing. This lets `evidence.claims` catch "all tests pass" when the recorded run
+says otherwise; pass explicit evidence when you have it.
 
 ## Output
 
@@ -153,8 +154,8 @@ The Stop hook runs the same audit after each Claude Code turn. See [hooks](hooks
 - Reconstructing artifacts from transcripts depends on the tool names and argument
   shapes; custom tools may need an adapter or `--git-repo`.
 - Bash side effects are not replayed.
-- The test-evidence heuristic reads text, not exit codes; when in doubt, record
-  evidence explicitly.
+- Test evidence combines the tool's success flag with output summaries. It can still
+  be ambiguous; when in doubt, record evidence explicitly.
 - The default rules are code-centric. Ops contracts use the `ops.*` pack at runtime
   and in backtests.
 - LangSmith / Langfuse importers are heuristic; see [importers](importers.md) for the

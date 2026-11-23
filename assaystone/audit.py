@@ -503,10 +503,22 @@ def audit_traces(
     )
 
 
-def render_audit(report: AuditReport, written_to: str | None = None) -> str:
+def _display_path(path: Path) -> str:
+    try:
+        relative = path.resolve().relative_to(Path.cwd().resolve())
+        return relative.as_posix() or "."
+    except ValueError:
+        return path.name or str(path)
+
+
+def render_audit(
+    report: AuditReport,
+    written_to: str | None = None,
+    baseline_label: str | None = None,
+) -> str:
     lines = [
         "Assaystone audit",
-        f"baseline: {report.baseline}",
+        f"baseline: {baseline_label or _display_path(report.baseline)}",
         f"traces: {len(report.traces)} "
         f"({report.clean_count()} clean, {len(report.finding_trace_ids())} with findings)",
     ]

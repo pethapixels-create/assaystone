@@ -21,6 +21,11 @@ def _write(output_dir: str | Path, name: str, text: str) -> Path:
     return target
 
 
+def _short_detail(detail: str) -> str:
+    detail = detail.removeprefix("contract failed: ")
+    return detail.replace(" cents exceeds limit ", " > ")
+
+
 def _backtest_rows(summaries) -> list[str]:
     rows = [
         f"{'contract':<12} {'defects':>7} {'caught':>7} {'escaped':>8} "
@@ -150,9 +155,8 @@ def run_ops(output_dir: str | Path = ".") -> str:
         "runtime gate",
     ]
     for outcome in outcomes:
-        lines.append(
-            f"  {outcome['name']:<20} {outcome['outcome']:<10} {outcome['detail']}"
-        )
+        detail = _short_detail(outcome["detail"])
+        lines.append(f"  {outcome['name']:<20} {outcome['outcome']:<10} {detail}")
     lines.append("cost is an illustrative model; override it per contract.")
 
     scorecard = [
@@ -196,6 +200,10 @@ def run_audit(output_dir: str | Path = ".") -> str:
     report = audit_traces(build_audit_contract(baseline), traces, baseline)
     contract_path = Path(output_dir) / "assaystone-demo-contract.json"
     report.write_contract(contract_path)
-    text = render_audit(report, written_to=str(contract_path))
+    text = render_audit(
+        report,
+        written_to=str(contract_path),
+        baseline_label="demo transcript",
+    )
     output = _write(output_dir, "assaystone-demo-audit.md", text + "\n")
     return "Assaystone audit demo — a coding-agent transcript\n" + text + f"\n\ndetails: {output}"

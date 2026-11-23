@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+ACTION_REF = "v0.3.1"
+
 
 def _detect_test_command(root: Path) -> tuple[list[str], bool]:
     if (
@@ -109,7 +111,7 @@ def init_project(root: str | Path = ".", force: bool = False, ci: bool = False) 
                 "    runs-on: ubuntu-latest\n"
                 "    steps:\n"
                 "      - uses: actions/checkout@v4\n"
-                "      - uses: yellowsand1/assaystone@main\n"
+                f"      - uses: yellowsand1/assaystone@{ACTION_REF}\n"
                 "        with:\n"
                 "          contract: .assaystone/contract.json\n"
                 "          traces: .assaystone/traces\n",

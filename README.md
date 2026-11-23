@@ -16,6 +16,8 @@ test suite cannot see. Point it at a transcript; get findings and a suggested co
 in seconds. Then gate CI and runtime with the same contract, and prove the checks work
 with mutation testing and backtesting.
 
+<img src="assets/demo.gif" alt="Assaystone auditing a Claude Code transcript and finding a deleted failing test" width="760">
+
 ```bash
 python3 -m assaystone demo audit
 ```
@@ -54,6 +56,14 @@ blocks a denied approval and an over-limit refund.
 
 Actions have the same problem. In the ops demo, an amount-only contract catches 0/4
 bad refunds; policy, ledger, status, and approval checks catch 4/4.
+
+## Failure Zoo
+
+The repo ships with labeled failures, not just demos: a deleted test, a CI edit, a
+debug print, a cross-module regression, an over-limit refund, and a missing approval.
+Each case names the verifier that should catch it, and each one is a regression test
+for the verifier ladder. The corpus is the seed for a public benchmark —
+[bring a redacted trace](failure_zoo/README.md) and it becomes a fixture.
 
 ## Why
 
@@ -124,6 +134,8 @@ in its post-session state, the audit falls back to reading the current files;
 integrity, forbidden paths, syntax, diff size, public API, debug prints, and
 claim-vs-evidence. `--run-tests` adds the test suite. `--json` is for machines;
 `--sarif` / `--junit` are for CI; `--no-evidence` keeps raw evidence out of reports.
+`--run-tests` executes the project's test command in a temporary copy of the baseline;
+it is not a sandbox, so only audit traces and repositories you trust.
 Details: [docs/audit.md](docs/audit.md) · [importers](docs/importers.md).
 
 ## Quickstart in your repo
@@ -204,7 +216,7 @@ def test_agent_run(assaystone):
 ### GitHub Action
 
 ```yaml
-- uses: yellowsand1/assaystone@main
+- uses: yellowsand1/assaystone@v0.3.1
   with:
     contract: .assaystone/contract.json
     traces: .assaystone/traces
@@ -309,19 +321,21 @@ Use the cheapest sufficient verifier. A judge is a filter, never the oracle.
 
 References: [built-in verifiers](docs/verifiers.md) · [contract format](docs/contracts.md).
 
-## Comparison
+## Where it fits
 
-| | trace audit | per-run verdict | evidence | runtime gate | mutation testing | backtesting | cost-aware ladder |
-|---|---|---|---|---|---|---|---|
-| promptfoo | — | ✅ | partial | — | — | — | — |
-| DeepEval | — | ✅ | partial | — | — | — | — |
-| Inspect AI | — | ✅ | partial | — | — | — | — |
-| Guardrails AI | — | ✅ | partial | ✅ | — | — | — |
-| OpenWorkProof | partial | ✅ | ✅ | ✅ | — | partial | — |
-| **Assaystone** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+Assaystone is an acceptance layer, not a replacement for evaluation or observability.
 
-Based on public documentation as of November 2026; corrections welcome. More
-framework adapters and domain packs are next.
+- **Evals** (promptfoo, DeepEval, Inspect AI) score outputs across a dataset.
+  Assaystone audits one run's artifacts and returns a verdict with evidence.
+- **Guardrails** (Guardrails AI, framework callbacks) filter inputs and outputs.
+  Assaystone also gates irreversible tool calls and checks the final deliverable.
+- **Tracing** (LangSmith, Langfuse, OpenTelemetry) records what happened. Assaystone
+  consumes those exports and decides whether the run is acceptable.
+- **Signed records** (Tracekit and similar) prove what ran. Assaystone supplies the
+  contract and verdict those records can attest to.
+
+They compose: record → verify → escalate. Keep the tools you already run; put
+Assaystone at the acceptance boundary.
 
 ## Design principles
 
@@ -357,7 +371,6 @@ docs/integrations.md   # LangGraph / OpenAI Agents runtime wrappers
 docs/verifiers.md      # built-in verifier reference
 docs/contracts.md      # contract format and exit codes
 docs/runtime.md        # runtime guard reference
-docs/launch.md         # adoption plan
 docs/release.md        # maintainer release checklist
 docs/releases/         # per-version release notes
 scripts/corpus_audit.py # aggregate local corpus audit
@@ -393,8 +406,9 @@ The fastest way to help is to
 
 Maintainers: see [docs/release.md](docs/release.md) for the release checklist.
 
-If this saves you from one silent failure, star the repo — it helps other agent teams
-find it.
+If this catches a failure in your stack,
+[bring the trace](.github/ISSUE_TEMPLATE/failure_case.md). Reproducible cases become
+regression tests.
 
 ## Name
 
