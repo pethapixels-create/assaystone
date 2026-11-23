@@ -47,8 +47,14 @@ cd /tmp && /tmp/assaystone-release/bin/assaystone demo audit
    git tag v0.3.1
    git push origin v0.3.1
    ```
+   For a manual run, `tag` is required and must start with `v`. If the version is
+   already on PyPI, set `publish_pypi=false` to build and create only the GitHub
+   release.
 4. `.github/workflows/release.yml` builds, checks, publishes to PyPI, and creates the
    GitHub release from `docs/releases/<tag>.md`.
+
+If a release was created with the wrong tag, delete the GitHub release and the bad
+tag, then run the workflow again with the correct tag and `publish_pypi=false`.
 
 For the already-pushed `v0.3.0` tag, add the workflow after configuring the publisher,
 then run **Actions → release → Run workflow** with `tag = v0.3.0`.
