@@ -56,18 +56,23 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           tag="$RELEASE_TAG"
+          notes_file=""
+          if [ -f "docs/releases/${tag}.md" ]; then
+            notes_file="docs/releases/${tag}.md"
+          elif curl -fsSL "https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/main/docs/releases/${tag}.md" -o /tmp/assaystone-release-notes.md; then
+            notes_file="/tmp/assaystone-release-notes.md"
+          fi
           if gh release view "$tag" >/dev/null 2>&1; then
-            echo "release $tag already exists"
+            if [ -n "$notes_file" ]; then
+              gh release edit "$tag" --notes-file "$notes_file"
+              echo "release $tag notes updated"
+            else
+              echo "release $tag already exists"
+            fi
             exit 0
           fi
-          notes="--generate-notes"
-          if [ -f "docs/releases/${tag}.md" ]; then
-            notes="--notes-file docs/releases/${tag}.md"
+          if [ -n "$notes_file" ]; then
+            gh release create "$tag" dist/* --title "$tag" --notes-file "$notes_file"
           else
-            git fetch --depth=1 origin main || true
-            if git cat-file -e "origin/main:docs/releases/${tag}.md" 2>/dev/null; then
-              git show "origin/main:docs/releases/${tag}.md" > /tmp/assaystone-release-notes.md
-              notes="--notes-file /tmp/assaystone-release-notes.md"
-            fi
+            gh release create "$tag" dist/* --title "$tag" --generate-notes
           fi
-          gh release create "$tag" dist/* --title "$tag" $notes
