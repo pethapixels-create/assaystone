@@ -47,6 +47,20 @@ mypack = "mypack.verifiers"
 
 Assaystone loads installed packs at import time; a broken pack is ignored.
 
+## Good first issues
+
+Concrete starting points, roughly smallest first:
+
+- Add a trace JSON schema and an `assaystone schema` command.
+- Add GitHub Action outputs for `verdict`, `findings`, and `traces`.
+- Add a Codex CLI transcript adapter with a redacted fixture.
+- Add an intent-aware `tests.weakened` verifier that compares removed test functions
+  and assertions against the pre-image.
+- Add a Failure Zoo benchmark runner that prints a Markdown scorecard.
+
+Open an issue with the proposal before starting; if an issue already exists, comment
+on it. Small PRs with a test and a fixture are easiest to review.
+
 ## Add an adapter
 
 Adapters live in `assaystone/adapters/`. They must be duck-typed and must not import
@@ -68,6 +82,9 @@ No runtime dependencies. Python 3.10+.
 - [ ] New verifiers have a layered test (clean + defective).
 - [ ] Docs updated if the contract or trace format changed.
 - [ ] No secrets or customer data in fixtures.
+
+Security reports: [SECURITY.md](SECURITY.md). Do not open a public issue for a
+suspected vulnerability.
 
 ## Code of conduct
 
