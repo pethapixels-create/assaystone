@@ -1,5 +1,5 @@
 name: Assaystone
-description: Run acceptance contracts over recorded agent traces and annotate the job.
+description: Verify recorded AI agent traces with acceptance contracts and annotate the job.
 author: Assaystone contributors
 branding:
   icon: check-circle
