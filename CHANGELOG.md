@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.0 — 2026-11-23
 
 - LangGraph (`LangGraphGuard`) and OpenAI Agents SDK (`run_with_verification`)
   runtime wrappers
