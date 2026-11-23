@@ -73,7 +73,7 @@ assaystone demo audit
 From source for contributors:
 
 ```bash
-git clone https://github.com/assaystone/assaystone
+git clone https://github.com/yellowsand1/assaystone
 cd assaystone
 python3 -m pip install -e ".[pytest]"
 python3 -m assaystone demo audit
@@ -197,7 +197,7 @@ def test_agent_run(assaystone):
 ### GitHub Action
 
 ```yaml
-- uses: assaystone/assaystone@main
+- uses: yellowsand1/assaystone@main
   with:
     contract: .assaystone/contract.json
     traces: .assaystone/traces

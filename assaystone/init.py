@@ -109,7 +109,7 @@ def init_project(root: str | Path = ".", force: bool = False, ci: bool = False) 
                 "    runs-on: ubuntu-latest\n"
                 "    steps:\n"
                 "      - uses: actions/checkout@v4\n"
-                "      - uses: assaystone/assaystone@main\n"
+                "      - uses: yellowsand1/assaystone@main\n"
                 "        with:\n"
                 "          contract: .assaystone/contract.json\n"
                 "          traces: .assaystone/traces\n",

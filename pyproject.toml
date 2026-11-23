@@ -31,10 +31,10 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/assaystone/assaystone"
-Repository = "https://github.com/assaystone/assaystone"
-Issues = "https://github.com/assaystone/assaystone/issues"
-Changelog = "https://github.com/assaystone/assaystone/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/yellowsand1/assaystone"
+Repository = "https://github.com/yellowsand1/assaystone"
+Issues = "https://github.com/yellowsand1/assaystone/issues"
+Changelog = "https://github.com/yellowsand1/assaystone/blob/main/CHANGELOG.md"
 
 [project.scripts]
 assaystone = "assaystone.cli:main"
