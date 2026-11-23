@@ -40,8 +40,8 @@ cd /tmp && /tmp/assaystone-release/bin/assaystone demo audit
    - Owner: `yellowsand1`
    - Repository: `assaystone`
    - Workflow: `release.yml`
-   - Environment: `pypi`
-2. In the GitHub repository, create an environment named `pypi` (no secrets needed).
+   - Environment: `PyPI`
+2. In the GitHub repository, create an environment named `PyPI` (no secrets needed).
 3. Push a version tag, or run the **release** workflow manually with the tag:
    ```bash
    git tag v0.3.1
