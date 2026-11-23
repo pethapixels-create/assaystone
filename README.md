@@ -4,6 +4,7 @@
 
 **Your agent's tests pass. Did it delete the failing test?**
 
+![ci](https://github.com/yellowsand1/assaystone/actions/workflows/ci.yml/badge.svg)
 ![status](https://img.shields.io/badge/status-alpha-orange)
 ![python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![pip](https://img.shields.io/badge/pip-install%20assaystone-blue)
