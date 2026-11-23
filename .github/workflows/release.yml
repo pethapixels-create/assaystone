@@ -1,0 +1,59 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to publish (for example v0.3.0). Leave empty to use the current ref.
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: pypi
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build
+        run: |
+          python -m pip install build twine
+          rm -rf dist
+          python -m build
+          python -m twine check dist/*
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -n "${{ inputs.tag }}" ]; then
+            tag="${{ inputs.tag }}"
+          else
+            tag="${GITHUB_REF_NAME}"
+          fi
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "release $tag already exists"
+            exit 0
+          fi
+          notes="--generate-notes"
+          if [ -f "docs/releases/${tag}.md" ]; then
+            notes="--notes-file docs/releases/${tag}.md"
+          else
+            git fetch --depth=1 origin main || true
+            if git cat-file -e "origin/main:docs/releases/${tag}.md" 2>/dev/null; then
+              git show "origin/main:docs/releases/${tag}.md" > /tmp/assaystone-release-notes.md
+              notes="--notes-file /tmp/assaystone-release-notes.md"
+            fi
+          fi
+          gh release create "$tag" dist/* --title "$tag" $notes

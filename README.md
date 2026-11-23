@@ -346,6 +346,8 @@ docs/verifiers.md      # built-in verifier reference
 docs/contracts.md      # contract format and exit codes
 docs/runtime.md        # runtime guard reference
 docs/launch.md         # adoption plan
+docs/release.md        # maintainer release checklist
+docs/releases/         # per-version release notes
 tests/                 # unit + integration tests
 ```
 
@@ -374,6 +376,8 @@ ship today.
 The fastest way to help is to
 [bring a failure case](.github/ISSUE_TEMPLATE/failure_case.md). See
 [CONTRIBUTING.md](CONTRIBUTING.md) for verifier and adapter guidelines.
+
+Maintainers: see [docs/release.md](docs/release.md) for the release checklist.
 
 If this saves you from one silent failure, star the repo — it helps other agent teams
 find it.
