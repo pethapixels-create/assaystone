@@ -24,8 +24,9 @@ import time
 from pathlib import Path
 from typing import Any
 
+from ..adapters.messages import artifacts_from_git
 from ..audit import AuditReport, audit_traces, build_audit_contract, load_audit_traces
-from ..replay import git_preimage, is_git_repo
+from ..replay import git_preimage, is_git_repo, is_git_root
 
 
 def _compact_message(report: AuditReport) -> str:
@@ -138,6 +139,17 @@ def run_hook(payload: dict[str, Any]) -> tuple[int, str]:
         transcript_path = cwd / transcript_path
     try:
         traces = load_audit_traces(transcript_path, baseline=cwd, workspace=True)
+        # Bash is the dominant edit channel in real sessions. When cwd is the
+        # git root, merge working-tree changes so sed/tee/patch edits are seen.
+        if is_git_root(cwd) and traces:
+            existing = {artifact.path for trace in traces for artifact in trace.artifacts}
+            extra = [
+                artifact
+                for artifact in artifacts_from_git(cwd)
+                if artifact.path not in existing
+            ]
+            if extra:
+                traces[0].artifacts.extend(extra)
         contract = build_audit_contract(cwd)
         report = None
         if is_git_repo(cwd):

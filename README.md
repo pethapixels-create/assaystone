@@ -63,6 +63,8 @@ suite is not an acceptance criterion.
 
 The longer argument: [Verification is the bottleneck](docs/why.md).
 
+Field note: [What 162 real Claude Code sessions say about verification](docs/case-study-2026-11.md).
+
 ## Install
 
 Python 3.10+. No runtime dependencies.
@@ -107,6 +109,9 @@ assaystone audit session.jsonl --baseline . \
 
 # use HEAD as the pre-session baseline for diff-size / public-API checks
 assaystone audit session.jsonl --baseline . --git-preimage
+
+# aggregate-only audit of a local Claude Code corpus
+python scripts/corpus_audit.py --root ~/.claude/projects
 ```
 
 Supported inputs: Claude Code `.jsonl` transcripts, LangSmith run exports, Langfuse
@@ -203,7 +208,7 @@ def test_agent_run(assaystone):
   with:
     contract: .assaystone/contract.json
     traces: .assaystone/traces
-    install: assaystone==0.3.0   # optional; default installs the action repo
+    install: assaystone==0.3.1   # optional; default installs the action repo
 ```
 
 Failures become PR annotations; a Markdown summary is written to the job summary.
@@ -339,6 +344,7 @@ examples/importers/    # LangSmith / Langfuse / OTel export fixtures
 examples/hooks/        # Claude Code Stop hook settings
 failure_zoo/           # labeled failure corpus (seed)
 docs/why.md            # the longer argument
+docs/case-study-2026-11.md  # 162-session field note
 docs/audit.md          # audit inputs, rules, output, limitations
 docs/importers.md      # LangSmith / Langfuse / OTel formats
 docs/hooks.md          # Claude Code Stop hook
@@ -349,12 +355,13 @@ docs/runtime.md        # runtime guard reference
 docs/launch.md         # adoption plan
 docs/release.md        # maintainer release checklist
 docs/releases/         # per-version release notes
+scripts/corpus_audit.py # aggregate local corpus audit
 tests/                 # unit + integration tests
 ```
 
 ## Status and roadmap
 
-`v0.3.0` — alpha. The core is domain-agnostic; the code/test and ops/refund packs
+`v0.3.1` — alpha. The core is domain-agnostic; the code/test and ops/refund packs
 ship today.
 
 - [x] audit: Claude Code transcripts, message exports, trace JSON

@@ -69,6 +69,43 @@ class ClaudeCodeHookTest(unittest.TestCase):
             code, message = run_hook(self._payload(cwd=str(repo)))
             self.assertEqual((code, message), (0, ""))
 
+    def test_git_working_tree_changes_are_audited(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp) / "repo"
+            (repo / "tests").mkdir(parents=True)
+            test_file = repo / "tests" / "test_x.py"
+            test_file.write_text("def test_x():\n    assert True\n", encoding="utf-8")
+            subprocess.run(["git", "init", "-q", "-b", "main"], cwd=repo, check=True)
+            subprocess.run(["git", "add", "."], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "-c", "user.email=a@b.c", "-c", "user.name=t", "commit", "-qm", "init"],
+                cwd=repo,
+                check=True,
+            )
+            # Simulate a Bash edit: no Edit/Write tool call in the transcript.
+            test_file.write_text("def test_x():\n    assert False\n", encoding="utf-8")
+            transcript = Path(tmp) / "session.jsonl"
+            session = f"git-hook-{uuid.uuid4()}"
+            entry = {
+                "type": "assistant",
+                "sessionId": session,
+                "message": {
+                    "role": "assistant",
+                    "content": [{"type": "text", "text": "Done."}],
+                },
+            }
+            transcript.write_text(json.dumps(entry) + "\n", encoding="utf-8")
+            code, message = run_hook(
+                {
+                    "session_id": session,
+                    "transcript_path": str(transcript),
+                    "cwd": str(repo),
+                    "stop_hook_active": False,
+                }
+            )
+            self.assertEqual(code, 0)
+            self.assertIn("tests.integrity", message)
+
     def test_cli_hook(self):
         proc = subprocess.run(
             [sys.executable, "-m", "assaystone", "hook", "claude-code"],

@@ -368,7 +368,9 @@ def build_audit_contract(baseline: str | Path = ".", run_tests: bool = False) ->
         if spec["name"] == "tests.pass" and not run_tests:
             continue
         if spec["name"] == "budget.steps":
-            spec.setdefault("params", {})["max_steps"] = 200
+            # Real coding sessions routinely exceed 200 steps; this is a
+            # runaway-loop guard, not an acceptance criterion.
+            spec.setdefault("params", {})["max_steps"] = 5000
         if spec["name"] == "diff.max_lines":
             spec.setdefault("params", {})["max_changed_lines"] = 400
         specs.append(spec)

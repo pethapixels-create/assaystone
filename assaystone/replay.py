@@ -205,6 +205,11 @@ def is_git_repo(repo: str | Path) -> bool:
     return result.returncode == 0
 
 
+def is_git_root(repo: str | Path) -> bool:
+    root = Path(repo).resolve()
+    return _repo_root(root) == root
+
+
 def git_preimage(repo: str | Path, paths: Iterable[str]) -> tempfile.TemporaryDirectory:
     """Create a temporary pre-session baseline from HEAD for the given paths."""
     root = Path(repo).resolve()

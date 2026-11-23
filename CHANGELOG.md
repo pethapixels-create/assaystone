@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.1
+
+- Claude Code hook merges git working-tree changes, capturing Bash-made edits
+- audit step budget raised from 200 to 5,000 based on a 162-session field audit
+- `scripts/corpus_audit.py` for read-only aggregate corpus audits
+- real-session field note and release notes
+
 ## 0.3.0
 
 - `assaystone audit`: Claude Code transcripts, message exports, trace JSON

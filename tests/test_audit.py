@@ -86,6 +86,11 @@ class AuditTest(unittest.TestCase):
             self.assertEqual({a.path for a in traces[0].artifacts}, {"src/a.py"})
             self.assertEqual(traces[0].artifacts[0].content, "new = 2\n")
 
+    def test_audit_step_budget_matches_real_sessions(self):
+        contract = build_audit_contract(BASELINE)
+        budget = next(spec for spec in contract.verifiers if spec.name == "budget.steps")
+        self.assertEqual(budget.params["max_steps"], 5000)
+
     def test_nested_test_dir_is_protected(self):
         contract = Contract(name="nested", verifiers=[VerifierSpec("tests.integrity")])
         trace = Trace(
