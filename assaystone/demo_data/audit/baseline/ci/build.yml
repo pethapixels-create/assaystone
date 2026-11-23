@@ -1,0 +1,3 @@
+# Placeholder CI pipeline for the Assaystone demo.
+test:
+  script: python -m unittest discover -s tests -t .

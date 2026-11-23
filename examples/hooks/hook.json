@@ -1,0 +1,10 @@
+{
+  "mode": "warn",
+  "fail_on": "high",
+  "ignore": [
+    {
+      "verifier": "tests.integrity",
+      "paths": ["server/tests/**"]
+    }
+  ]
+}

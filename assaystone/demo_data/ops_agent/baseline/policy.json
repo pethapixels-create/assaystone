@@ -1,0 +1,4 @@
+{
+  "refund_limit_cents": 10000,
+  "require_approval_for": ["refund.create"]
+}

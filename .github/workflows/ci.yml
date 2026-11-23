@@ -1,0 +1,52 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install
+        run: python -m pip install -e ".[pytest]"
+      - name: Unit and integration tests
+        run: make test
+      - name: End-to-end demo (audit)
+        run: make demo-audit
+      - name: End-to-end demo (code/test)
+        run: make demo
+      - name: End-to-end demo (ops/runtime)
+        run: make demo-ops
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build wheel and sdist
+        run: |
+          python -m pip install build
+          python -m build
+      - name: Install wheel in a clean venv
+        run: |
+          python -m venv /tmp/assaystone-wheel
+          /tmp/assaystone-wheel/bin/pip install dist/*.whl pytest
+          /tmp/assaystone-wheel/bin/assaystone --version
+      - name: Demos from the installed wheel
+        run: |
+          mkdir -p /tmp/assaystone-demo
+          cd /tmp/assaystone-demo
+          /tmp/assaystone-wheel/bin/assaystone demo audit
+          /tmp/assaystone-wheel/bin/assaystone demo
+          /tmp/assaystone-wheel/bin/assaystone demo ops

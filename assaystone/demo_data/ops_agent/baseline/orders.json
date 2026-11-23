@@ -1,0 +1,32 @@
+{
+  "orders": [
+    {
+      "id": "O-1001",
+      "customer": "acme",
+      "amount_cents": 12000,
+      "refunded_cents": 0,
+      "status": "captured"
+    },
+    {
+      "id": "O-1002",
+      "customer": "beta",
+      "amount_cents": 5000,
+      "refunded_cents": 5000,
+      "status": "refunded"
+    },
+    {
+      "id": "O-1003",
+      "customer": "gamma",
+      "amount_cents": 8000,
+      "refunded_cents": 0,
+      "status": "captured"
+    }
+  ],
+  "refunds": [
+    {
+      "id": "R-1",
+      "order_id": "O-1002",
+      "amount_cents": 5000
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+name: Assaystone
+description: Run acceptance contracts over recorded agent traces and annotate the job.
+author: Assaystone contributors
+branding:
+  icon: check-circle
+  color: green
+
+inputs:
+  contract:
+    description: Path to the acceptance contract JSON file.
+    required: true
+  traces:
+    description: Trace file or directory of trace JSON files.
+    required: true
+  baseline:
+    description: Path to the baseline repository.
+    required: false
+    default: "."
+  python-version:
+    description: Python version used to run Assaystone.
+    required: false
+    default: "3.11"
+  install:
+    description: Optional pip install spec, for example "assaystone==0.3.0". Defaults to installing this action's repository.
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+    - name: Install Assaystone
+      shell: bash
+      run: |
+        if [ -n "${{ inputs.install }}" ]; then
+          python -m pip install "${{ inputs.install }}"
+        else
+          repo="${{ github.action_repository }}"
+          ref="${{ github.action_ref }}"
+          if [ -z "$repo" ]; then
+            repo="${{ github.repository }}"
+            ref="${{ github.sha }}"
+          fi
+          python -m pip install "assaystone @ git+https://github.com/${repo}@${ref}"
+        fi
+    - name: Verify agent traces
+      shell: bash
+      run: |
+        assaystone verify \
+          --contract "${{ inputs.contract }}" \
+          --trace "${{ inputs.traces }}" \
+          --baseline "${{ inputs.baseline }}" \
+          --github

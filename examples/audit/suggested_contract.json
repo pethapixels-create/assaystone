@@ -1,0 +1,71 @@
+{
+  "name": "audit-baseline",
+  "test_command": [
+    "{python}",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tests",
+    "-t",
+    ".",
+    "-v"
+  ],
+  "fail_fast": false,
+  "human_review_cost_usd": 6.0,
+  "max_verification_cost_usd": 0.05,
+  "verifiers": [
+    {
+      "name": "budget.steps",
+      "required": true,
+      "params": {
+        "max_steps": 200
+      }
+    },
+    {
+      "name": "diff.syntax",
+      "required": true,
+      "params": {}
+    },
+    {
+      "name": "diff.forbidden_paths",
+      "required": true,
+      "params": {
+        "forbidden": [
+          "ci/"
+        ]
+      }
+    },
+    {
+      "name": "tests.integrity",
+      "required": true,
+      "params": {
+        "protected_prefixes": [
+          "tests/"
+        ]
+      }
+    },
+    {
+      "name": "diff.max_lines",
+      "required": true,
+      "params": {
+        "max_changed_lines": 400
+      }
+    },
+    {
+      "name": "diff.public_api",
+      "required": true,
+      "params": {}
+    },
+    {
+      "name": "quality.no_debug_prints",
+      "required": true,
+      "params": {}
+    },
+    {
+      "name": "evidence.claims",
+      "required": true,
+      "params": {}
+    }
+  ]
+}

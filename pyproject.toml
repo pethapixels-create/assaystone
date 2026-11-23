@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "assaystone"
+version = "0.3.0"
+description = "Audit AI agent traces for silent failures, then gate CI and runtime with acceptance contracts."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Assaystone contributors" }]
+keywords = [
+    "ai",
+    "agents",
+    "verification",
+    "evaluation",
+    "mutation-testing",
+    "llm",
+    "audit",
+    "ai-agents",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Quality Assurance",
+]
+
+[project.urls]
+Homepage = "https://github.com/assaystone/assaystone"
+Repository = "https://github.com/assaystone/assaystone"
+Issues = "https://github.com/assaystone/assaystone/issues"
+Changelog = "https://github.com/assaystone/assaystone/blob/main/CHANGELOG.md"
+
+[project.scripts]
+assaystone = "assaystone.cli:main"
+
+[project.optional-dependencies]
+pytest = ["pytest>=7"]
+
+[project.entry-points.pytest11]
+assaystone = "assaystone.pytest_plugin"
+
+[tool.setuptools]
+include-package-data = true
+license-files = ["LICENSE"]
+
+[tool.setuptools.packages.find]
+include = ["assaystone*"]
+
+[tool.setuptools.package-data]
+assaystone = ["demo_data/**/*"]
