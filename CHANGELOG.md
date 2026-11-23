@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- LangGraph (`LangGraphGuard`) and OpenAI Agents SDK (`run_with_verification`)
+  runtime wrappers
+- field-note manual triage: 0 confirmed test tampering in the five strongest
+  candidates; the path-based rule surfaces activity, not intent
+
 ## 0.3.1
 
 - Claude Code hook merges git working-tree changes, capturing Bash-made edits

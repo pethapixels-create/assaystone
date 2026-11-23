@@ -219,6 +219,7 @@ Failures become PR annotations; a Markdown summary is written to the job summary
 - OpenAI-style chat/tool messages (`from_openai_agents`)
 - LangGraph state dicts (`from_langgraph`)
 - Generic message lists (`from_messages`)
+- Runtime wrappers: [LangGraph and OpenAI Agents SDK](docs/integrations.md)
 - `artifacts_from_git` collects changed files as artifacts
 
 Adapters are duck-typed and never import the framework. Details:
@@ -291,6 +292,9 @@ Irreversible tools are blocked unless `approval_callback` returns True. The full
 contract runs at `finish`; `ContractFailed` and `EscalationRequired` stop the run.
 `enforce=False` runs in shadow mode. Details: [docs/runtime.md](docs/runtime.md).
 
+Framework wrappers: `LangGraphGuard` and `run_with_verification` for OpenAI Agents —
+[docs/integrations.md](docs/integrations.md).
+
 ## The verifier ladder
 
 | Layer | Examples | Cost | Independence |
@@ -349,6 +353,7 @@ docs/audit.md          # audit inputs, rules, output, limitations
 docs/importers.md      # LangSmith / Langfuse / OTel formats
 docs/hooks.md          # Claude Code Stop hook
 docs/adapters.md       # Claude / OpenAI / LangGraph adapters
+docs/integrations.md   # LangGraph / OpenAI Agents runtime wrappers
 docs/verifiers.md      # built-in verifier reference
 docs/contracts.md      # contract format and exit codes
 docs/runtime.md        # runtime guard reference
@@ -373,6 +378,7 @@ ship today.
 - [x] Claude Agent SDK / OpenAI-style / LangGraph adapters, `artifacts_from_git`
 - [x] pytest plugin and GitHub Action
 - [x] runtime gate for irreversible actions (approvals, shadow mode)
+- [x] LangGraph / OpenAI Agents runtime wrappers
 - [x] ops/refund pack
 - [x] git pre-image baseline for post-session diff checks
 - [ ] data reconciliation and report citation packs

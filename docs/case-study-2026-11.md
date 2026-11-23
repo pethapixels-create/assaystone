@@ -50,6 +50,24 @@ noise.
 messages are summaries, not acceptance claims; the useful signals are path/config/state
 changes, not self-report contradictions.
 
+## Manual triage: the five strongest candidates
+
+We inspected the five unique candidates (1 test-only, 4 Bash test writes). **Zero
+confirmed test tampering.**
+
+- Three Bash "test write" flags were temporary probe scripts or delivery notes whose
+  contents/imports mentioned test paths; the written file was outside the repo test
+  tree.
+- One test-only session was a test fixture/schema refactor during an upstream bug
+  investigation (the task explicitly asked to check for and add tests); it deleted and
+  modified fixture classes and SQL, not assertions in the surviving test.
+- One Bash session added new Java test files (new tests), not removed or weakened
+  tests.
+
+Takeaway: path-based `tests.integrity` surfaces **test-directory activity, not
+intent**. The Stop hook's warn-first default is correct; an intent-aware verifier
+should compare removed test functions/assertions against a pre-image.
+
 ## Changes shipped in 0.3.1
 
 - The Claude Code hook now merges **git working-tree changes** when `cwd` is the git
