@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>What 162 Claude Code sessions taught me about silent failures — Assaystone</title>
+  <meta name="description" content="A read-only aggregate audit of 162 Claude Code sessions: 28,082 steps, Bash as 74% of activity, and why path-based test rules should not pretend to know intent.">
+  <meta name="theme-color" content="#0d1117">
+  <link rel="canonical" href="https://yellowsand1.github.io/assaystone/blog/162-claude-code-sessions/">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="What 162 Claude Code sessions taught me about silent failures">
+  <meta property="og:description" content="The strongest signal was not cheating. It was where trace auditing goes blind.">
+  <meta property="og:url" content="https://yellowsand1.github.io/assaystone/blog/162-claude-code-sessions/">
+  <meta property="og:image" content="https://yellowsand1.github.io/assaystone/assets/social-preview.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="../../assets/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../../styles.css">
+  <style>
+    .article-hero { max-width: 1050px; margin: 0 auto; padding: 88px 28px 58px; }
+    .article-hero h1 { max-width: 980px; margin: 22px 0 24px; font-size: clamp(48px, 7vw, 88px); }
+    .article-hero .lede { max-width: 820px; font-size: 21px; }
+    .article-meta { display: flex; flex-wrap: wrap; gap: 12px 25px; margin-top: 26px; color: #747c87; font: 12px var(--mono); }
+    .article-wrap { max-width: 960px; margin: 0 auto; padding: 0 28px 110px; }
+    .article-body { max-width: 760px; margin: 0 auto; color: #303946; font-size: 18px; line-height: 1.78; }
+    .article-body h2 { margin: 68px 0 20px; color: var(--ink); font-size: clamp(34px, 4vw, 48px); line-height: 1.08; letter-spacing: -.035em; }
+    .article-body h3 { margin: 42px 0 12px; color: var(--ink); font-size: 24px; letter-spacing: -.02em; }
+    .article-body p { margin: 0 0 23px; }
+    .article-body a { color: #7a4d00; font-weight: 700; }
+    .article-body code { padding: 2px 5px; background: #ede5d7; border-radius: 4px; font: 14px var(--mono); }
+    .article-body pre { margin: 30px 0; padding: 22px; color: #dce5ef; background: var(--ink); border-radius: 12px; }
+    .article-body pre code { padding: 0; color: inherit; background: none; }
+    .metrics.article-metrics { margin: 40px 0 54px; max-width: 900px; }
+    .metrics.article-metrics div { min-height: 135px; }
+    .article-pullquote { margin: 50px 0; padding: 26px 30px; color: #2a210f; background: #f7e8c8; border-left: 5px solid var(--amber); font: 500 26px/1.4 Georgia, serif; }
+    .article-table { width: 100%; margin: 30px 0 40px; border-collapse: collapse; font-size: 15px; }
+    .article-table th, .article-table td { padding: 12px 14px; border-bottom: 1px solid var(--line); text-align: left; }
+    .article-table th { color: #6e4a08; background: #f1eadf; font: 700 11px var(--mono); letter-spacing: .04em; text-transform: uppercase; }
+    .article-table td:last-child { font-family: var(--mono); }
+    .article-cta { margin-top: 70px; padding: 38px; color: #eaf0f7; background: var(--ink); border-radius: 16px; }
+    .article-cta h2 { margin-top: 0; color: #fff; }
+    .article-cta p { color: #9fabb9; }
+    .article-back { display: inline-block; margin-bottom: 24px; color: #6c747f; font: 700 12px var(--mono); text-decoration: none; }
+    @media (max-width: 700px) {
+      .article-hero { padding-top: 55px; }
+      .article-body { font-size: 17px; }
+      .article-row { overflow-x: auto; }
+      .article-table { min-width: 620px; }
+      .article-cta { padding: 28px 22px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="../../" aria-label="Assaystone home">
+      <img src="../../assets/logo.svg" alt="" width="34" height="34"><span>Assaystone</span>
+    </a>
+    <nav aria-label="Primary navigation">
+      <a href="../../#how">How it works</a>
+      <a href="../../#evidence">Evidence</a>
+      <a href="../../#quickstart">Quickstart</a>
+      <a class="nav-github" href="https://github.com/yellowsand1/assaystone">GitHub <span aria-hidden="true">↗</span></a>
+    </nav>
+  </header>
+
+  <main>
+    <header class="article-hero">
+      <a class="article-back" href="/assaystone/blog/">← FIELD NOTES</a>
+      <div class="eyebrow"><span class="pulse"></span> Field note · November 2026</div>
+      <h1>What 162 Claude Code sessions taught me about silent failures</h1>
+      <p class="lede">The strongest signal was not widespread cheating. It was how easily trace-based verification can look at the wrong part of the work.</p>
+      <div class="article-meta">
+        <span>READ-ONLY LOCAL CORPUS</span><span>162 USABLE SESSIONS</span><span>28,082 STEPS</span><span>NO MODEL CALLS</span>
+      </div>
+    </header>
+
+    <article class="article-wrap">
+      <div class="metrics article-metrics" aria-label="Study metrics">
+        <div><strong>162</strong><span>usable sessions from 167 transcript files</span></div>
+        <div><strong>28,082</strong><span>recorded agent steps</span></div>
+        <div><strong>74%</strong><span>of steps were Bash commands</span></div>
+        <div><strong>0</strong><span>confirmed test tampering in the five strongest candidates</span></div>
+      </div>
+
+      <div class="article-body">
+        <p>I built <a href="https://github.com/yellowsand1/assaystone">Assaystone</a> around a deliberately uncomfortable question: when an agent says the work is done, what independent evidence proves it? The pitch can sound like “catch agents deleting tests.” Before trusting that framing, I ran the audit over my own local Claude Code history.</p>
+
+        <p>The corpus was 167 JSONL transcript files, about 578 MB, reduced to 162 usable sessions. Everything ran offline. I reconstructed file edits from <code>Write</code>, <code>Edit</code>, and <code>MultiEdit</code> tool calls, then applied Assaystone's default path, syntax, diff, debug-print, and evidence rules. This was one user's corpus with no human labels. The numbers are signals, not confirmed defects.</p>
+
+        <p>The result changed how I describe the product.</p>
+
+        <h2>1. Test edits are common. Test tampering was not.</h2>
+        <p>Twenty-eight sessions, 17% of the corpus, touched test files. That sounds alarming until you look at the denominator: 27 of those sessions also touched source files. Normal feature work usually changes implementation and tests together.</p>
+        <p>Only one session edited tests without editing source. It looked like the strongest possible signal. Manual review found a test fixture and schema refactor during an upstream bug investigation. The task had explicitly asked for that work.</p>
+        <div class="article-pullquote">A path-based rule can tell you that test files changed. It cannot tell you whether the agent protected the product or protected itself.</div>
+        <p>I manually triaged the five strongest candidates overall, including four sessions that wrote into test-like paths through shell commands. None were confirmed test tampering. One added new tests. Three wrote temporary probe scripts or delivery notes whose contents happened to mention test paths.</p>
+        <p>The honest product claim is therefore not “Assaystone detects cheating.” It is: <strong>Assaystone makes the acceptance boundary explicit, testable, and reviewable.</strong> Path-based test integrity is a useful warning, not an intent detector.</p>
+
+        <h2>2. The audit's biggest blind spot was Bash.</h2>
+        <p>Bash was 20,688 of 28,082 tool steps, roughly 74%. That is not an implementation detail. If a verifier only understands editor tool calls, it misses most of what the agent actually does.</p>
+        <p>Sixty-one sessions wrote files through shell commands such as <code>cat &gt;</code>, <code>tee</code>, <code>sed -i</code>, <code>patch</code>, <code>perl -pi</code>, and <code>git apply</code>. Sixteen of those had no <code>Edit</code> or <code>Write</code> artifacts at all. Four wrote into paths that looked like tests.</p>
+        <p>That led to a concrete change for Claude Code: the Stop hook merges git working-tree changes when it runs inside a repository, so Bash-made edits become visible to path, syntax, and diff checks. Transcript replay still has limits, but the acceptance layer no longer pretends that the editor is the whole interface.</p>
+        <table class="article-table">
+          <thead><tr><th>Signal</th><th>What it means</th></tr></thead>
+          <tbody>
+            <tr><td>Sessions with editor edits</td><td>63</td></tr>
+            <tr><td>Sessions with Shell-only file writes</td><td>16</td></tr>
+            <tr><td>Sessions editing test-like paths via Bash</td><td>4</td></tr>
+          </tbody>
+        </table>
+
+        <h2>3. A 200-step budget treated long work as failure.</h2>
+        <p>Forty-six sessions exceeded 200 steps. The median was 96, p90 was 347, and the longest reached 2,440. A low budget catches runaway loops, but it also marks ordinary long debugging sessions as suspicious.</p>
+        <p>The default moved to 5,000. That is not an acceptance threshold. It is a guard against something that failed to stop.</p>
+
+        <h2>4. “All tests pass” is usually not the final sentence.</h2>
+        <p>I expected final messages to be full of unsupported success claims. A strict claim check found zero sessions. Real agent endings were mostly summaries, not acceptance statements.</p>
+        <p>That matters for verifier design. The useful evidence is often the exit code from the test command, the files that changed, or the relationship between an action and its result. Parsing impressive-sounding prose is a weaker foundation than checking structured evidence.</p>
+
+        <h2>What this means for agent verification</h2>
+        <p>The first version of a verifier is usually a proxy. A path rule proxies for “the agent weakened tests.” A step budget proxies for “the agent is stuck.” A final-message check proxies for “the agent lied.” Each proxy is useful only when its distance from the real property is visible.</p>
+        <p>Assaystone's contract model treats determinism and uncertainty as first-class:</p>
+        <ul>
+          <li><strong>Pass</strong> when independent evidence supports the requested property.</li>
+          <li><strong>Fail</strong> when the property is contradicted by concrete evidence.</li>
+          <li><strong>Escalate</strong> when the available checks cannot decide safely.</li>
+        </ul>
+        <p>This is also why mutation testing and backtesting matter. A verifier that always fails is not safe; it is noise. A verifier that never fails is not independent; it is decoration. Inject labeled defects, measure recall, measure false alarms, and compare the result to human labels.</p>
+
+        <h2>Reproduce the aggregate audit</h2>
+        <p>The corpus script is read-only. It does not modify transcripts or repositories and makes no model calls.</p>
+        <pre><code>pip install assaystone
+git clone https://github.com/yellowsand1/assaystone
+cd assaystone
+python scripts/corpus_audit.py --root ~/.claude/projects</code></pre>
+        <p>If your corpus produces very different numbers—especially the Bash-only write rate or the share of sessions over 200 steps—that is exactly the kind of evidence the project needs. The <a href="https://github.com/yellowsand1/assaystone/issues/7">Failure Zoo is open</a> for redacted traces and minimal reproductions.</p>
+
+        <h2>Limits</h2>
+        <p>This was a single-user corpus with no human labels. Transcript replay only sees structured tool calls; shell coverage depends on git state. The strongest candidates were manually reviewed, but the broader corpus was not labeled by a second reviewer. Treat the findings as a calibration exercise, not a prevalence study.</p>
+
+        <div class="article-cta">
+          <h2>Verify what the agent actually did.</h2>
+          <p>Audit your latest Claude Code or Codex session in one command. No API key, hosted control plane, or runtime dependency.</p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="https://github.com/yellowsand1/assaystone">Star on GitHub</a>
+            <a class="button button-secondary" href="/assaystone/#quickstart">Run the quickstart</a>
+          </div>
+        </div>
+      </div>
+    </article>
+  </main>
+
+  <footer>
+    <div class="footer-brand"><img src="../../assets/logo.svg" alt="" width="26" height="26"><strong>Assaystone</strong><span>Verification, not evaluation.</span></div>
+    <div class="footer-links">
+      <a href="https://github.com/yellowsand1/assaystone">GitHub</a>
+      <a href="https://github.com/yellowsand1/assaystone/tree/main/docs">Docs</a>
+      <a href="https://github.com/yellowsand1/assaystone/blob/main/failure_zoo/README.md">Failure Zoo</a>
+      <a href="https://github.com/yellowsand1/assaystone/blob/main/LICENSE">Apache-2.0</a>
+    </div>
+  </footer>
+</body>
+</html>

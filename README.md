@@ -86,7 +86,8 @@ suite is not an acceptance criterion.
 
 The longer argument: [Verification is the bottleneck](docs/why.md).
 
-Field note: [What 162 real Claude Code sessions say about verification](docs/case-study-2026-11.md).
+Field note: [What 162 real Claude Code sessions say about verification](docs/case-study-2026-11.md)
+or read the [hosted version](https://yellowsand1.github.io/assaystone/blog/162-claude-code-sessions/).
 
 ## Install
 

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Field notes — Assaystone</title>
+  <meta name="description" content="Evidence, limits, and field notes from building verification for AI agents.">
+  <link rel="canonical" href="https://yellowsand1.github.io/assaystone/blog/">
+  <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../styles.css">
+  <style>
+    .blog-list { max-width: 1000px; min-height: 70vh; margin: 0 auto; padding: 110px 28px; }
+    .blog-list h1 { margin: 17px 0 18px; font-size: clamp(48px, 7vw, 82px); }
+    .blog-list > p { max-width: 700px; color: var(--muted); font-size: 19px; line-height: 1.65; }
+    .blog-card { display: block; margin-top: 60px; padding: 35px; color: var(--text); background: #fffdf8; border: 1px solid var(--line); border-radius: 16px; text-decoration: none; transition: transform .18s ease, box-shadow .18s ease; }
+    .blog-card:hover { transform: translateY(-3px); box-shadow: 0 18px 50px rgba(13,17,23,.08); }
+    .blog-card time { color: #8b5c08; font: 700 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+    .blog-card h2 { max-width: 820px; margin: 15px 0 12px; color: var(--ink); font-size: clamp(30px, 4vw, 46px); line-height: 1.1; letter-spacing: -.035em; }
+    .blog-card p { max-width: 720px; color: var(--muted); line-height: 1.65; }
+    .blog-card b { color: #744c05; }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="../" aria-label="Assaystone home"><img src="../assets/logo.svg" alt="" width="34" height="34"><span>Assaystone</span></a>
+    <nav><a href="../#evidence">Evidence</a><a href="../#quickstart">Quickstart</a><a class="nav-github" href="https://github.com/yellowsand1/assaystone">GitHub ↗</a></nav>
+  </header>
+  <main class="blog-list">
+    <div class="eyebrow"><span class="pulse"></span> Evidence from real agent work</div>
+    <h1>Field notes</h1>
+    <p>What real traces reveal about verification, including the parts that do not fit the launch pitch.</p>
+    <a class="blog-card" href="162-claude-code-sessions/">
+      <time datetime="2026-11-24">November 24, 2026 · Field note</time>
+      <h2>What 162 Claude Code sessions taught me about silent failures</h2>
+      <p>28,082 steps, 74% Bash, and zero confirmed cases of test tampering. A read-only audit of where trace verification works—and where it goes blind.</p>
+      <b>Read the study →</b>
+    </a>
+  </main>
+  <footer>
+    <div class="footer-brand"><img src="../assets/logo.svg" alt="" width="26" height="26"><strong>Assaystone</strong><span>Verification, not evaluation.</span></div>
+    <div class="footer-links"><a href="https://github.com/yellowsand1/assaystone">GitHub</a><a href="../">Home</a></div>
+  </footer>
+</body>
+</html>
