@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Assaystone — verification for AI agents</title>
+  <meta name="description" content="Audit Claude Code and Codex traces for silent failures, turn findings into acceptance contracts, and gate CI and runtime with evidence.">
+  <meta name="theme-color" content="#0d1117">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Your agent's tests pass. Did it delete the failing test?">
+  <meta property="og:description" content="Audit agent traces, generate acceptance contracts, and gate CI or runtime with deterministic evidence.">
+  <meta property="og:url" content="https://yellowsand1.github.io/assaystone/">
+  <meta property="og:image" content="https://yellowsand1.github.io/assaystone/assets/social-preview.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Your agent's tests pass. Did it delete the failing test?">
+  <meta name="twitter:description" content="Assaystone finds silent failures in agent traces and turns them into testable acceptance contracts.">
+  <meta name="twitter:image" content="https://yellowsand1.github.io/assaystone/assets/social-preview.png">
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="Assaystone home">
+      <img src="assets/logo.svg" alt="" width="34" height="34">
+      <span>Assaystone</span>
+    </a>
+    <nav aria-label="Primary navigation">
+      <a href="#how">How it works</a>
+      <a href="#evidence">Evidence</a>
+      <a href="#quickstart">Quickstart</a>
+      <a class="nav-github" href="https://github.com/yellowsand1/assaystone">GitHub <span aria-hidden="true">↗</span></a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="top">
+      <div class="hero-copy">
+        <div class="eyebrow"><span class="pulse"></span> Open source · Apache-2.0 · zero runtime dependencies</div>
+        <h1>Your agent's tests pass.<br><em>Did it delete the failing test?</em></h1>
+        <p class="lede">Assaystone audits Claude Code and Codex traces for silent failures, turns the findings into reusable acceptance contracts, and gates CI and runtime with evidence—not a self-report.</p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#quickstart">Run the audit</a>
+          <a class="button button-secondary" href="https://github.com/yellowsand1/assaystone">View on GitHub <span aria-hidden="true">↗</span></a>
+        </div>
+        <div class="terminal" aria-label="Install and run Assaystone">
+          <div class="terminal-bar"><span></span><span></span><span></span><b>terminal</b></div>
+          <div class="terminal-body">
+            <div><span class="prompt">$</span> pip install assaystone</div>
+            <div><span class="prompt">$</span> assaystone audit --latest claude-code</div>
+            <div class="finding"><span>HIGH</span> tests.integrity <strong>tests/test_discounts.py (modified)</strong></div>
+            <div class="summary">summary: 0 critical, 1 high, 0 medium, 0 low</div>
+          </div>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="glow"></div>
+        <div class="demo-frame">
+          <div class="demo-topline"><span class="live-dot"></span> REAL TERMINAL DEMO</div>
+          <img src="assets/demo.gif" alt="Assaystone auditing a Claude Code transcript and finding a deleted failing test" width="1200" height="760">
+        </div>
+        <div class="floating-card">
+          <span class="floating-label">INDEPENDENT EVIDENCE</span>
+          <strong>pass / fail / escalate</strong>
+          <p>The same contract runs in audit, CI, pytest, and runtime.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="trust-strip" aria-label="Supported inputs">
+      <span>Works with the traces you already have</span>
+      <ul>
+        <li>Claude Code</li>
+        <li>Codex CLI</li>
+        <li>LangSmith</li>
+        <li>Langfuse</li>
+        <li>OpenTelemetry</li>
+        <li>pytest</li>
+        <li>GitHub Actions</li>
+      </ul>
+    </section>
+
+    <section class="section problem-section">
+      <div class="section-heading">
+        <p class="kicker">The missing acceptance layer</p>
+        <h2>A green suite answers one question.<br>Production asks five more.</h2>
+      </div>
+      <div class="defect-grid">
+        <article><span class="mono">tests.pass</span><b>✅</b><h3>Failing test deleted</h3><p>The suite is green because the uncomfortable evidence disappeared.</p><code>tests.integrity</code></article>
+        <article><span class="mono">tests.pass</span><b>✅</b><h3>CI weakened</h3><p>The agent edited the workflow instead of fixing the implementation.</p><code>diff.forbidden_paths</code></article>
+        <article><span class="mono">tests.pass</span><b>✅</b><h3>Assertion softened</h3><p>The test still exists, but no longer checks the behavior that mattered.</p><code>tests.integrity</code></article>
+        <article><span class="mono">tests.pass</span><b>✅</b><h3>Debug code shipped</h3><p>Every test passes while developer-only output reaches production.</p><code>quality.no_debug_prints</code></article>
+      </div>
+    </section>
+
+    <section class="section how-section" id="how">
+      <div class="section-heading center">
+        <p class="kicker">From trace to verdict</p>
+        <h2>Record once. Verify many times.</h2>
+        <p>Start with a transcript you already have. No model judge, hosted control plane, or vendor migration required.</p>
+      </div>
+      <div class="steps">
+        <article>
+          <span class="step-number">01</span>
+          <h3>Audit the run</h3>
+          <p>Recover the files and actions the agent actually touched. Surface test tampering, forbidden edits, unsafe actions, and unsupported success claims.</p>
+        </article>
+        <article>
+          <span class="step-number">02</span>
+          <h3>Turn findings into a contract</h3>
+          <p>The contract is versioned with your code. Every verifier declares its evidence source, cost, layer, and independence.</p>
+        </article>
+        <article>
+          <span class="step-number">03</span>
+          <h3>Gate CI and runtime</h3>
+          <p>Fail merges and irreversible tool calls with the same checks. Route ambiguous outcomes to a human instead of guessing.</p>
+        </article>
+      </div>
+      <div class="code-grid">
+        <div class="code-card">
+          <div class="code-title">One command, latest session</div>
+<pre><code><span>$</span> assaystone audit --latest codex
+<span>$</span> assaystone audit --latest claude-code</code></pre>
+        </div>
+        <div class="code-card">
+          <div class="code-title">Claude Code plugin</div>
+<pre><code>/plugin marketplace add yellowsand1/assaystone
+/plugin install assaystone@assaystone</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="section evidence-section" id="evidence">
+      <div class="evidence-copy">
+        <p class="kicker">Built from real sessions</p>
+        <h2>An honest field note,<br>including the uncomfortable result.</h2>
+        <p>We ran a read-only aggregate audit over 162 local Claude Code sessions. The data showed where trace auditing goes blind—and why path-based test detection should warn instead of pretending to know intent.</p>
+        <a class="text-link" href="https://github.com/yellowsand1/assaystone/blob/main/docs/case-study-2026-11.md">Read the method and limits <span aria-hidden="true">→</span></a>
+      </div>
+      <div class="metrics">
+        <div><strong>162</strong><span>usable sessions</span></div>
+        <div><strong>28,082</strong><span>agent steps</span></div>
+        <div><strong>74%</strong><span>of steps were Bash</span></div>
+        <div><strong>0</strong><span>confirmed test tampering after manual triage</span></div>
+      </div>
+    </section>
+
+    <section class="section principles-section">
+      <div class="section-heading">
+        <p class="kicker">Designed for production trust</p>
+        <h2>Deterministic first.<br>Escalation is a feature.</h2>
+      </div>
+      <div class="principle-list">
+        <article><span>01</span><div><h3>Verify artifacts, not self-reports</h3><p>“All tests pass” is a claim. Exit codes, files, and independent checks are evidence.</p></div></article>
+        <article><span>02</span><div><h3>Compose, don’t replace</h3><p>Keep LangSmith, Langfuse, or OpenTelemetry. Assaystone owns the acceptance boundary.</p></div></article>
+        <article><span>03</span><div><h3>Test the verifiers</h3><p>Mutation testing and backtesting measure whether checks actually catch known defects.</p></div></article>
+        <article><span>04</span><div><h3>Fail closed only when justified</h3><p>Pass, fail, or escalate. Unknown evidence never quietly becomes success.</p></div></article>
+      </div>
+    </section>
+
+    <section class="section quickstart-section" id="quickstart">
+      <div class="quickstart-card">
+        <div>
+          <p class="kicker">60-second quickstart</p>
+          <h2>Find your last agent's silent failure.</h2>
+          <p>Python 3.10+. Install the package, then audit the newest Claude Code or Codex session for the current workspace.</p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="https://github.com/yellowsand1/assaystone">Star on GitHub</a>
+            <a class="button button-secondary" href="https://pypi.org/project/assaystone/">Install from PyPI</a>
+          </div>
+        </div>
+        <div class="quick-terminal">
+          <button class="copy-button" data-copy="pip install assaystone\nassaystone audit --latest claude-code">Copy</button>
+          <pre><code>pip install assaystone
+assaystone audit --latest claude-code</code></pre>
+          <p>No API key. No runtime dependencies. Nothing leaves your machine.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="footer-brand"><img src="assets/logo.svg" alt="" width="26" height="26"><strong>Assaystone</strong><span>Verification, not evaluation.</span></div>
+    <div class="footer-links">
+      <a href="https://github.com/yellowsand1/assaystone">GitHub</a>
+      <a href="https://github.com/yellowsand1/assaystone/tree/main/docs">Docs</a>
+      <a href="https://github.com/yellowsand1/assaystone/blob/main/failure_zoo/README.md">Failure Zoo</a>
+      <a href="https://github.com/yellowsand1/assaystone/blob/main/LICENSE">Apache-2.0</a>
+    </div>
+  </footer>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -25,6 +25,7 @@ _EDIT_TOOLS = {
     "multiedit",
     "delete_file",
     "remove_file",
+    "apply_patch",
 }
 
 
@@ -41,6 +42,101 @@ def relative_path(raw: Any, baseline: Path) -> str | None:
         return text
     except (ValueError, OSError):
         return None
+
+
+def _patch_sections(patch: str) -> list[dict[str, Any]]:
+    """Parse the patch format used by Codex CLI's apply_patch tool."""
+    lines = patch.replace("\r\n", "\n").splitlines()
+    sections: list[dict[str, Any]] = []
+    current: dict[str, Any] | None = None
+    in_body = False
+    for line in lines:
+        if line.startswith("*** Add File: "):
+            current = {"kind": "add", "path": line.removeprefix("*** Add File: ").strip(), "body": []}
+            sections.append(current)
+            in_body = True
+            continue
+        if line.startswith("*** Update File: "):
+            current = {
+                "kind": "update",
+                "path": line.removeprefix("*** Update File: ").strip(),
+                "body": [],
+            }
+            sections.append(current)
+            in_body = True
+            continue
+        if line.startswith("*** Delete File: "):
+            current = {
+                "kind": "delete",
+                "path": line.removeprefix("*** Delete File: ").strip(),
+                "body": [],
+            }
+            sections.append(current)
+            in_body = False
+            continue
+        if line.startswith("*** Move to: ") and current is not None:
+            current["move_to"] = line.removeprefix("*** Move to: ").strip()
+            continue
+        if line == "*** End Patch":
+            current = None
+            in_body = False
+            continue
+        if current is not None and in_body:
+            current["body"].append(line)
+    return sections
+
+
+def _apply_patch_sections(
+    patch: str,
+    current: dict[str, str | None],
+    load: Any,
+    root: Path,
+) -> None:
+    for section in _patch_sections(patch):
+        relative = relative_path(section.get("path"), root)
+        if relative is None:
+            continue
+        kind = section["kind"]
+        if kind == "delete":
+            current[relative] = None
+            continue
+        if kind == "add":
+            body = [
+                line[1:]
+                for line in section["body"]
+                if line.startswith("+") and not line.startswith("+++")
+            ]
+            content = "\n".join(body)
+            if content:
+                content += "\n"
+            current[relative] = content
+            continue
+        if kind != "update":
+            continue
+        text = load(relative)
+        if text is None:
+            continue
+        for hunk in re.split(r"^@@.*$", "\n".join(section["body"]), flags=re.MULTILINE):
+            old_lines: list[str] = []
+            new_lines: list[str] = []
+            for line in hunk.splitlines():
+                if line.startswith("-") and not line.startswith("---"):
+                    old_lines.append(line[1:])
+                elif line.startswith("+") and not line.startswith("+++"):
+                    new_lines.append(line[1:])
+                elif line.startswith(" "):
+                    old_lines.append(line[1:])
+                    new_lines.append(line[1:])
+            if not old_lines and not new_lines:
+                continue
+            old_block = "\n".join(old_lines)
+            new_block = "\n".join(new_lines)
+            if old_block and old_block in text:
+                text = text.replace(old_block, new_block, 1)
+        destination = relative_path(section.get("move_to"), root) or relative
+        current[destination] = text
+        if destination != relative:
+            current[relative] = None
 
 
 def replay_tool_calls(
@@ -62,6 +158,11 @@ def replay_tool_calls(
 
     for name, args in tool_calls:
         tool = name.lower()
+        if tool == "apply_patch":
+            patch = args.get("patch") or args.get("input") or args.get("raw")
+            if isinstance(patch, str):
+                _apply_patch_sections(patch, current, load, root)
+            continue
         raw_path = args.get("file_path") or args.get("path") or args.get("file")
         relative = relative_path(raw_path, root)
         if relative is None:
@@ -122,7 +223,19 @@ def touched_paths(
     root = Path(baseline).resolve()
     paths: set[str] = set()
     for name, args in tool_calls:
-        if name.lower() not in _EDIT_TOOLS:
+        tool = name.lower()
+        if tool not in _EDIT_TOOLS:
+            continue
+        if tool == "apply_patch":
+            patch = args.get("patch") or args.get("input") or args.get("raw")
+            if isinstance(patch, str):
+                for section in _patch_sections(patch):
+                    relative = relative_path(section.get("path"), root)
+                    if relative:
+                        paths.add(relative)
+                    destination = relative_path(section.get("move_to"), root)
+                    if destination:
+                        paths.add(destination)
             continue
         raw = args.get("file_path") or args.get("path") or args.get("file")
         relative = relative_path(raw, root)
@@ -304,7 +417,15 @@ def infer_test_evidence(trace: Trace) -> None:
     code: int | None = None
     for step in trace.steps:
         tool = step.tool.lower()
-        if tool not in {"bash", "shell", "run_tests", "execute_command", "terminal"}:
+        if tool not in {
+            "bash",
+            "shell",
+            "run_tests",
+            "execute_command",
+            "exec_command",
+            "shell_command",
+            "terminal",
+        }:
             continue
         command = str(step.args.get("command") or step.args.get("cmd") or "")
         if not _TEST_RUNNER.search(command):

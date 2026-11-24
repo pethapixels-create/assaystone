@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-ACTION_REF = "v0.4.1"
+ACTION_REF = "v0.5.0"
 
 
 def _detect_test_command(root: Path) -> tuple[list[str], bool]:

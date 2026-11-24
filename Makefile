@@ -1,13 +1,27 @@
-.PHONY: demo demo-ops demo-audit test
+PYTHON ?= $(shell command -v python3.12 2>/dev/null || command -v python3.11 2>/dev/null || command -v python3.10 2>/dev/null || command -v python3)
 
-demo:
-	python3 -m assaystone demo
+.PHONY: check-python demo demo-ops demo-audit test pytest lint package
 
-demo-ops:
-	python3 -m assaystone demo ops
+check-python:
+	@$(PYTHON) -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else "Assaystone requires Python 3.10+; set PYTHON to a newer interpreter")'
 
-demo-audit:
-	python3 -m assaystone demo audit
+demo: check-python
+	$(PYTHON) -m assaystone demo
 
-test:
-	python3 -m unittest discover -s tests -t . -v
+demo-ops: check-python
+	$(PYTHON) -m assaystone demo ops
+
+demo-audit: check-python
+	$(PYTHON) -m assaystone demo audit
+
+test: check-python
+	$(PYTHON) -m unittest discover -s tests -t . -v
+
+pytest: check-python
+	$(PYTHON) -m pytest
+
+lint: check-python
+	$(PYTHON) -m ruff check assaystone tests
+
+package: check-python
+	$(PYTHON) -m build

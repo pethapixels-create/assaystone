@@ -1,9 +1,12 @@
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from assaystone.audit import audit_traces, build_audit_contract, load_audit_traces
+from assaystone.cli import _write_github_outputs
 from assaystone.contract import Contract
 from assaystone.model import load_traces
 from assaystone.reports import (
@@ -49,6 +52,16 @@ class VerifyReportsTest(unittest.TestCase):
             self.assertIn("<testsuite", text)
             self.assertIn("t03-test-tampering", text)
             self.assertIn("<failure", text)
+
+    def test_github_action_outputs(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "outputs.txt"
+            with patch.dict(os.environ, {"GITHUB_OUTPUT": str(path)}):
+                _write_github_outputs(self.results)
+            values = path.read_text(encoding="utf-8")
+            self.assertIn("verdict=fail\n", values)
+            self.assertIn(f"traces={len(self.results)}\n", values)
+            self.assertNotIn("findings=0\n", values)
 
 
 class AuditReportsTest(unittest.TestCase):

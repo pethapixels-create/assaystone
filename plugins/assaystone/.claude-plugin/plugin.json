@@ -1,0 +1,14 @@
+{
+  "name": "assaystone",
+  "displayName": "Assaystone",
+  "version": "0.5.0",
+  "description": "Audit Claude Code sessions for silent failures and turn findings into acceptance contracts.",
+  "author": {
+    "name": "Assaystone contributors",
+    "url": "https://github.com/yellowsand1/assaystone"
+  },
+  "homepage": "https://yellowsand1.github.io/assaystone/",
+  "repository": "https://github.com/yellowsand1/assaystone",
+  "license": "Apache-2.0",
+  "keywords": ["verification", "agents", "claude-code", "testing", "audit"]
+}

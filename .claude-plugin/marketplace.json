@@ -1,0 +1,16 @@
+{
+  "name": "assaystone",
+  "description": "Verification tools for AI agents from trace to verdict.",
+  "owner": {
+    "name": "Assaystone contributors",
+    "url": "https://github.com/yellowsand1/assaystone"
+  },
+  "plugins": [
+    {
+      "name": "assaystone",
+      "source": "./plugins/assaystone",
+      "description": "Audit Claude Code sessions for silent failures and turn findings into acceptance contracts.",
+      "version": "0.5.0"
+    }
+  ]
+}

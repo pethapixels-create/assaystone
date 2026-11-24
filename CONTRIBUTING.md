@@ -52,11 +52,12 @@ Assaystone loads installed packs at import time; a broken pack is ignored.
 Concrete starting points, roughly smallest first:
 
 - Add a trace JSON schema and an `assaystone schema` command.
-- Add GitHub Action outputs for `verdict`, `findings`, and `traces`.
-- Add a Codex CLI transcript adapter with a redacted fixture.
+- Add a Cursor or Windsurf transcript adapter with a redacted fixture.
 - Add an intent-aware `tests.weakened` verifier that compares removed test functions
   and assertions against the pre-image.
 - Add a Failure Zoo benchmark runner that prints a Markdown scorecard.
+- Add a PR comment summary mode for the GitHub Action.
+- Add a chart that tracks verifier recall across releases.
 
 Open an issue with the proposal before starting; if an issue already exists, comment
 on it. Small PRs with a test and a fixture are easiest to review.
@@ -69,7 +70,9 @@ the framework. Add a test with recorded messages, not a live API call.
 ## Development
 
 ```bash
-python3 -m unittest discover -s tests -t . -v
+make test    # Python 3.10+ is selected automatically when available
+make pytest  # pytest entry point, including plugin collection
+make lint
 make demo
 ```
 
@@ -77,7 +80,8 @@ No runtime dependencies. Python 3.10+.
 
 ## Pull request checklist
 
-- [ ] Tests pass (`make test`).
+- [ ] Tests pass (`make test`, `make pytest`).
+- [ ] Lint passes (`make lint`).
 - [ ] The demo still runs (`make demo`).
 - [ ] New verifiers have a layered test (clean + defective).
 - [ ] Docs updated if the contract or trace format changed.

@@ -10,13 +10,26 @@
 ![status](https://img.shields.io/badge/status-alpha-orange)
 ![python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![license](https://img.shields.io/badge/license-Apache--2.0-blue)
+[![website](https://img.shields.io/badge/website-live-2ea44f)](https://yellowsand1.github.io/assaystone/)
 
-Assaystone audits existing agent traces for silent failures — the failures a green
-test suite cannot see. Point it at a transcript; get findings and a suggested contract
-in seconds. Then gate CI and runtime with the same contract, and prove the checks work
-with mutation testing and backtesting.
+Assaystone audits existing Claude Code, Codex CLI, and observability traces for
+silent failures — the failures a green test suite cannot see. Point it at a transcript;
+get findings and a suggested contract in seconds. Then gate CI and runtime with the
+same contract, and prove the checks work with mutation testing and backtesting.
 
 <img src="assets/demo.gif" alt="Assaystone auditing a Claude Code transcript and finding a deleted failing test" width="760">
+
+## 60-second audit
+
+```bash
+pip install assaystone
+assaystone audit --latest claude-code   # or: --latest codex
+```
+
+Assaystone finds the newest local transcript for the current workspace and audits it.
+Nothing leaves your machine. No API key or runtime dependency is required.
+
+No transcript yet? Run the bundled failure case:
 
 ```bash
 python3 -m assaystone demo audit
@@ -96,7 +109,11 @@ python3 -m assaystone demo audit
 ## Audit your own traces
 
 ```bash
-# Claude Code transcript
+# newest local session for this repo (no path required)
+assaystone audit --latest claude-code
+assaystone audit --latest codex
+
+# explicit Claude Code transcript
 assaystone audit ~/.claude/projects/.../<session>.jsonl --baseline .
 
 # LangSmith / Langfuse exports
@@ -124,9 +141,11 @@ assaystone audit session.jsonl --baseline . --git-preimage
 python scripts/corpus_audit.py --root ~/.claude/projects
 ```
 
-Supported inputs: Claude Code `.jsonl` transcripts, LangSmith run exports, Langfuse
-trace/observation exports, OpenTelemetry GenAI spans, message JSON/lists, and
-Assaystone trace JSON. Importers are heuristic; `--format` forces one. For transcripts
+Supported inputs: Claude Code `.jsonl` transcripts, Codex CLI session JSONL,
+LangSmith run exports, Langfuse trace/observation exports, OpenTelemetry GenAI spans,
+message JSON/lists, and Assaystone trace JSON. Importers are heuristic; `--format`
+forces one. `--latest claude-code` and `--latest codex` discover the newest session
+for the current workspace. For transcripts
 and importers, artifacts are reconstructed from `Write` / `Edit` tool calls;
 `--git-repo` is more reliable when the changes are real. If the repository is already
 in its post-session state, the audit falls back to reading the current files;
@@ -184,7 +203,23 @@ for machines, `--github` for Actions annotations.
 
 ## Integrations
 
+### Claude Code plugin
+
+Install the plugin marketplace and plugin directly inside Claude Code:
+
+```bash
+claude plugin marketplace add yellowsand1/assaystone
+claude plugin install assaystone@assaystone
+pip install assaystone
+```
+
+The plugin adds `/assaystone:audit`, `/assaystone:setup`, and a Stop hook that runs the
+same local audit after each session. The hook fails open if the CLI is unavailable.
+Details: [docs/plugin.md](docs/plugin.md).
+
 ### Claude Code Stop hook
+
+Use the hook without the plugin when you want a project-local settings change:
 
 ```bash
 assaystone hook install claude-code --mode warn
@@ -216,17 +251,18 @@ def test_agent_run(assaystone):
 ### GitHub Action
 
 ```yaml
-- uses: yellowsand1/assaystone@v0.4.1
+- uses: yellowsand1/assaystone@v0.5.0
   with:
     contract: .assaystone/contract.json
     traces: .assaystone/traces
-    install: assaystone==0.4.1   # optional; default installs the action repo
+    install: assaystone==0.5.0   # optional; default installs the action repo
 ```
 
 Failures become PR annotations; a Markdown summary is written to the job summary.
 
 ### Framework adapters
 
+- Claude Code and Codex CLI transcript import
 - Claude Agent SDK message streams (`from_claude_agent`)
 - OpenAI-style chat/tool messages (`from_openai_agents`)
 - LangGraph state dicts (`from_langgraph`)
@@ -353,8 +389,11 @@ Assaystone at the acceptance boundary.
 ## Repository layout
 
 ```
-assaystone/            # library: models, runner, verifiers, adapters, audit, runtime, CLI
+assaystone/            # library: models, sessions, runner, verifiers, adapters, audit, runtime, CLI
 assaystone/demo_data/  # packaged demos (the wheel can run them)
+.claude-plugin/        # Claude Code marketplace catalog
+plugins/assaystone/    # Claude Code plugin: skills + Stop hook
+site/                  # static GitHub Pages landing page
 examples/code_agent/   # baseline repo, contracts, scenarios, generated traces
 examples/ops_agent/    # runtime gate + ops/refund pack
 examples/audit/        # a Claude Code transcript that deletes the failing test
@@ -379,17 +418,18 @@ tests/                 # unit + integration tests
 
 ## Status and roadmap
 
-`v0.4.1` — alpha. The core is domain-agnostic; the code/test and ops/refund packs
+`v0.5.0` — alpha. The core is domain-agnostic; the code/test and ops/refund packs
 ship today.
 
-- [x] audit: Claude Code transcripts, message exports, trace JSON
+- [x] audit: Claude Code and Codex CLI transcripts, message exports, trace JSON
+- [x] one-command discovery: `audit --latest claude-code|codex`
 - [x] LangSmith / Langfuse / OpenTelemetry importers
-- [x] Claude Code Stop hook (warn/block, install, dedupe, allowlist)
+- [x] Claude Code plugin marketplace + Stop hook (warn/block, dedupe, allowlist)
 - [x] SARIF and JUnit output
 - [x] contracts, verifier ladder, pass/fail/escalate
 - [x] mutation testing and backtesting
 - [x] Claude Agent SDK / OpenAI-style / LangGraph adapters, `artifacts_from_git`
-- [x] pytest plugin and GitHub Action
+- [x] pytest plugin and GitHub Action with machine-readable outputs
 - [x] runtime gate for irreversible actions (approvals, shadow mode)
 - [x] LangGraph / OpenAI Agents runtime wrappers
 - [x] ops/refund pack
@@ -404,7 +444,8 @@ The fastest way to help is to
 [bring a failure case](.github/ISSUE_TEMPLATE/failure_case.md). See
 [CONTRIBUTING.md](CONTRIBUTING.md) for verifier and adapter guidelines.
 
-Maintainers: see [docs/release.md](docs/release.md) for the release checklist.
+Maintainers: see [docs/release.md](docs/release.md) for the release checklist and
+[ROADMAP.md](ROADMAP.md) for the current product and growth priorities.
 
 If this catches a failure in your stack,
 [bring the trace](.github/ISSUE_TEMPLATE/failure_case.md). Reproducible cases become

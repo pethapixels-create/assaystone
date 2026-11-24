@@ -11,13 +11,15 @@ from . import __version__, demo
 from .audit import AuditError, audit_traces, build_audit_contract, load_audit_traces, render_audit
 from .backtest import backtest
 from .contract import Contract
-from .hooks.claude_code import install_claude_code, main as claude_code_hook_main
+from .hooks.claude_code import install_claude_code
+from .hooks.claude_code import main as claude_code_hook_main
 from .init import init_project
 from .model import ESCALATE, FAIL, PASS, load_traces
 from .mutate import run_mutation
 from .replay import git_preimage, is_git_repo
 from .reports import write_audit_junit, write_audit_sarif, write_junit, write_sarif
 from .runner import run_contract
+from .sessions import SessionDiscoveryError, find_latest_session
 
 
 def _display(path: Path) -> str:
@@ -74,6 +76,32 @@ def _emit_github(results: list) -> None:
         elif result.verdict == ESCALATE:
             reason = result.first_failure or "needs human review"
             print(f"::warning title=Assaystone {_gh_escape(result.trace_id)}::{_gh_escape(reason)}")
+
+
+def _write_github_outputs(results: list) -> None:
+    path = os.environ.get("GITHUB_OUTPUT")
+    if not path:
+        return
+    if any(result.verdict == FAIL for result in results):
+        verdict = FAIL
+    elif any(result.verdict == ESCALATE for result in results):
+        verdict = ESCALATE
+    else:
+        verdict = PASS
+    findings = sum(
+        1
+        for result in results
+        for finding in result.verdicts
+        if finding.outcome != PASS
+    )
+    values = {
+        "verdict": verdict,
+        "findings": findings,
+        "traces": len(results),
+    }
+    with open(path, "a", encoding="utf-8") as handle:
+        for key, value in values.items():
+            handle.write(f"{key}={value}\n")
 
 
 def _write_step_summary(contract: Contract, results: list) -> None:
@@ -135,7 +163,7 @@ def cmd_verify(args: argparse.Namespace) -> int:
             )
         )
     else:
-        for trace, result in zip(traces, results):
+        for trace, result in zip(traces, results, strict=True):
             print(
                 f"{trace.id:<24} {result.verdict.upper():<9} "
                 f"{result.cost_usd:.6f} USD  {result.duration_ms:.1f} ms"
@@ -149,6 +177,7 @@ def cmd_verify(args: argparse.Namespace) -> int:
     if args.github:
         _emit_github(results)
         _write_step_summary(contract, results)
+        _write_github_outputs(results)
 
     if any(result.verdict == FAIL for result in results):
         return 1
@@ -158,32 +187,61 @@ def cmd_verify(args: argparse.Namespace) -> int:
 
 
 def cmd_audit(args: argparse.Namespace) -> int:
+    source = args.source
+    baseline = Path(args.baseline or ".")
+    audit_format = args.format
+    git_repo = args.git_repo
+    if args.latest:
+        if source:
+            print("error: use either a source path or --latest, not both", file=sys.stderr)
+            return 2
+        try:
+            session = find_latest_session(args.latest)
+        except SessionDiscoveryError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
+        source = str(session.path)
+        if args.baseline is None:
+            baseline = session.cwd or Path.cwd()
+        if audit_format == "auto":
+            audit_format = args.latest
+        if git_repo is None and is_git_repo(baseline):
+            git_repo = str(baseline)
+        if not args.json:
+            print(
+                f"latest {args.latest} session: {session.path}",
+                file=sys.stderr,
+            )
+    if not source:
+        print("error: provide a trace path or use --latest {claude-code,codex}", file=sys.stderr)
+        return 2
+
     try:
         traces = load_audit_traces(
-            args.source,
-            format=args.format,
-            git_repo=args.git_repo,
-            baseline=args.baseline,
+            source,
+            format=audit_format,
+            git_repo=git_repo,
+            baseline=baseline,
             workspace=args.workspace or args.git_preimage,
         )
     except AuditError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     if not traces:
-        print(f"error: no traces found in {args.source}", file=sys.stderr)
+        print(f"error: no traces found in {source}", file=sys.stderr)
         return 2
 
-    contract = build_audit_contract(args.baseline, run_tests=args.run_tests)
+    contract = build_audit_contract(baseline, run_tests=args.run_tests)
     report = None
     if args.git_preimage:
-        if not is_git_repo(args.baseline):
+        if not is_git_repo(baseline):
             print(
                 "warning: --git-preimage requires a git repository; using the working tree",
                 file=sys.stderr,
             )
         else:
             preimage = git_preimage(
-                args.baseline,
+                baseline,
                 [
                     artifact.path
                     for trace in traces
@@ -194,9 +252,9 @@ def cmd_audit(args: argparse.Namespace) -> int:
                 report = audit_traces(contract, traces, preimage.name)
             finally:
                 preimage.cleanup()
-            report.baseline = Path(args.baseline).resolve()
+            report.baseline = baseline.resolve()
     if report is None:
-        report = audit_traces(contract, traces, args.baseline)
+        report = audit_traces(contract, traces, baseline)
     if args.no_evidence:
         _strip_audit_evidence(report)
 
@@ -384,13 +442,32 @@ def _parser() -> argparse.ArgumentParser:
     )
     audit.add_argument(
         "source",
+        nargs="?",
         help="trace JSON, transcript JSONL, LangSmith / Langfuse / OTel export, or a directory",
     )
-    audit.add_argument("--baseline", default=".")
+    audit.add_argument(
+        "--latest",
+        choices=["claude-code", "codex"],
+        help="audit the newest local transcript for this workspace",
+    )
+    audit.add_argument(
+        "--baseline",
+        default=None,
+        help="pre-session repository; defaults to the current directory or session cwd",
+    )
     audit.add_argument("--git-repo", default=None)
     audit.add_argument(
         "--format",
-        choices=["auto", "trace", "messages", "claude-code", "langsmith", "langfuse", "otel"],
+        choices=[
+            "auto",
+            "trace",
+            "messages",
+            "claude-code",
+            "codex",
+            "langsmith",
+            "langfuse",
+            "otel",
+        ],
         default="auto",
     )
     audit.add_argument("--run-tests", action="store_true")
@@ -468,7 +545,16 @@ def _parser() -> argparse.ArgumentParser:
     record.add_argument("--out", required=True, help="output trace path, or - for stdout")
     record.add_argument(
         "--format",
-        choices=["auto", "trace", "messages", "claude-code", "langsmith", "langfuse", "otel"],
+        choices=[
+            "auto",
+            "trace",
+            "messages",
+            "claude-code",
+            "codex",
+            "langsmith",
+            "langfuse",
+            "otel",
+        ],
         default="auto",
     )
     record.add_argument("--baseline", default=None)

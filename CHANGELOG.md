@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.5.0 — 2026-11-24
+
+- Codex CLI transcript import, including `apply_patch` replay and `exec_command`
+  test-evidence inference
+- `assaystone audit --latest claude-code` and `--latest codex` discover the newest
+  local session for the current workspace
+- root `pytest` collection fixed by scoping tests to `tests/`; CI now runs both the
+  unittest suite and pytest entry point
+- Python 3.13 added to the CI matrix; lint and coverage gates added
+- wheel and sdist no longer include `__pycache__` or `.pyc` files; PEP 639 license
+  metadata and an explicit development dependency set added
+- GitHub Action outputs: `verdict`, `findings`, and `traces`
+- Claude Code plugin marketplace with `/assaystone:audit`, `/assaystone:setup`, and a
+  fail-open Stop hook, validated with `claude plugin validate --strict`
+- GitHub Pages landing page and social preview
+- Makefile supports newer local Python interpreters and adds `pytest`, `lint`, and
+  `package` targets
+
 ## 0.4.1 — 2026-11-23
 
 - Packaging fix: generated GitHub workflows now pin `v0.4.1`, and the README/Action

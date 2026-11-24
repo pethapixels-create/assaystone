@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
 
 from ..adapters.messages import artifacts_from_git
 from ..model import Artifact, Trace

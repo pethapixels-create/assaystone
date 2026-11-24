@@ -7,6 +7,7 @@ rule set, and reports findings plus a suggested contract.
 from __future__ import annotations
 
 import json
+import re
 import warnings as pywarnings
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -80,6 +81,155 @@ def _looks_like_claude_code(entries: Sequence[Any]) -> bool:
         and "message" in entry
         for entry in entries
     )
+
+
+def _looks_like_codex(entries: Sequence[Any]) -> bool:
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        if entry.get("type") == "session_meta":
+            return True
+        payload = entry.get("payload")
+        if (
+            entry.get("type") == "response_item"
+            and isinstance(payload, dict)
+            and payload.get("type") in {"function_call", "function_call_output", "message"}
+        ):
+            return True
+    return False
+
+
+def _codex_text(content: Any) -> str:
+    if isinstance(content, str):
+        return content
+    if not isinstance(content, list):
+        return ""
+    parts: list[str] = []
+    for item in content:
+        if not isinstance(item, dict):
+            continue
+        if item.get("type") in {"input_text", "output_text", "text"}:
+            text = item.get("text")
+            if text:
+                parts.append(str(text))
+    return "\n".join(parts)
+
+
+def _codex_args(value: Any) -> dict[str, Any]:
+    if isinstance(value, dict):
+        return dict(value)
+    if isinstance(value, str):
+        try:
+            parsed = json.loads(value)
+        except json.JSONDecodeError:
+            return {"raw": value}
+        return parsed if isinstance(parsed, dict) else {"value": parsed}
+    return {"value": value} if value is not None else {}
+
+
+def _codex_patch(command: str) -> str | None:
+    start = command.find("*** Begin Patch")
+    if start < 0:
+        return None
+    marker = "*** End Patch"
+    end = command.find(marker, start)
+    if end < 0:
+        return None
+    return command[start : end + len(marker)]
+
+
+def _codex_output_ok(output: str) -> bool:
+    match = re.search(r"Process exited with code\s+(\d+)", output, re.IGNORECASE)
+    if match:
+        return match.group(1) == "0"
+    return not re.search(r"(?:^|\n)\s*(?:error|fatal):", output, re.IGNORECASE)
+
+
+def _normalize_codex(
+    entries: Sequence[Any],
+) -> tuple[list[dict[str, Any]], str | None, dict[str, Any]]:
+    """Convert Codex CLI response items into the common message/tool shape."""
+    messages: list[dict[str, Any]] = []
+    session_id: str | None = None
+    evidence: dict[str, Any] = {}
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        record_type = entry.get("type")
+        payload = entry.get("payload")
+        if not isinstance(payload, dict):
+            continue
+        if record_type == "session_meta":
+            session_id = str(payload.get("session_id") or payload.get("id") or "") or None
+            metadata = {
+                key: payload.get(key)
+                for key in ("cli_version", "model_provider", "originator", "thread_source", "cwd")
+                if payload.get(key) is not None
+            }
+            if metadata:
+                evidence["codex_session"] = metadata
+            continue
+        if record_type != "response_item":
+            continue
+        item_type = payload.get("type")
+        if item_type == "message":
+            role = str(payload.get("role") or "")
+            if role not in {"user", "assistant"}:
+                continue
+            text = _codex_text(payload.get("content"))
+            if not text:
+                continue
+            block_type = "text"
+            messages.append(
+                {
+                    "type": role,
+                    "sessionId": session_id,
+                    "content": [{"type": block_type, "text": text}],
+                }
+            )
+            continue
+        if item_type == "function_call":
+            name = str(payload.get("name") or "tool")
+            args = _codex_args(payload.get("arguments"))
+            command = str(args.get("cmd") or args.get("command") or "")
+            if name == "exec_command" and command:
+                patch = _codex_patch(command)
+                if patch:
+                    name = "apply_patch"
+                    args = {"patch": patch, "command": command}
+            messages.append(
+                {
+                    "type": "assistant",
+                    "sessionId": session_id,
+                    "content": [
+                        {
+                            "type": "tool_use",
+                            "id": payload.get("call_id") or payload.get("id"),
+                            "name": name,
+                            "input": args,
+                        }
+                    ],
+                }
+            )
+            continue
+        if item_type == "function_call_output":
+            output = payload.get("output")
+            text = output if isinstance(output, str) else json.dumps(output, ensure_ascii=False)
+            messages.append(
+                {
+                    "type": "user",
+                    "sessionId": session_id,
+                    "content": [
+                        {
+                            "type": "tool_result",
+                            "tool_use_id": payload.get("call_id"),
+                            "content": text,
+                            "is_error": not _codex_output_ok(text),
+                        }
+                    ],
+                }
+            )
+    return messages, session_id, evidence
 
 
 def _normalize_claude_code(entries: Sequence[Any]) -> list[dict[str, Any]]:
@@ -216,6 +366,22 @@ def _load_file(
                 return _load_import(
                     path, detected, git_repo=git_repo, baseline=baseline, workspace=workspace
                 )
+        if format == "codex" or (format == "auto" and _looks_like_codex(entries)):
+            messages, codex_id, evidence = _normalize_codex(entries)
+            if not messages:
+                raise AuditError(f"{path}: no usable Codex CLI response items")
+            trace = _trace_from_messages(
+                messages,
+                source=path,
+                agent="codex",
+                trace_id=codex_id,
+                git_repo=git_repo,
+                baseline=baseline,
+                workspace=workspace,
+                parse_warnings=jsonl_errors,
+            )
+            trace.evidence.update(evidence)
+            return [trace]
         if format == "claude-code" or (format == "auto" and _looks_like_claude_code(entries)):
             messages = _normalize_claude_code(entries)
             return [
@@ -330,6 +496,7 @@ def load_audit_traces(
         "trace",
         "messages",
         "claude-code",
+        "codex",
         "langsmith",
         "langfuse",
         "otel",

@@ -16,7 +16,6 @@ from .contract import Contract
 from .model import ESCALATE, FAIL, Artifact, Trace
 from .runner import run_contract
 
-
 FLIP_OPS: dict[type[ast.cmpop], type[ast.cmpop]] = {
     ast.Eq: ast.NotEq,
     ast.NotEq: ast.Eq,

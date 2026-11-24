@@ -10,8 +10,15 @@ python3 -m assaystone demo audit
 ## Inputs
 
 ```bash
-# Claude Code transcript
+# newest transcript for the current workspace (no path required)
+assaystone audit --latest claude-code
+assaystone audit --latest codex
+
+# explicit Claude Code transcript
 assaystone audit ~/.claude/projects/.../<session>.jsonl --baseline .
+
+# Codex CLI session JSONL
+assaystone audit ~/.codex/sessions/.../rollout-*.jsonl --baseline .
 
 # LangSmith / Langfuse / OpenTelemetry
 assaystone audit runs.json --format langsmith --baseline .
@@ -28,8 +35,10 @@ assaystone audit trace.json --format trace --baseline .
 assaystone audit traces/ --baseline .
 ```
 
-`--format` is `auto` by default; LangSmith and Langfuse exports are detected from
-their shape. Details: [importers](importers.md).
+`--format` is `auto` by default; Claude Code, Codex CLI, LangSmith, Langfuse, and
+OpenTelemetry exports are detected from their shape. `--latest` finds the newest
+Claude Code or Codex session whose recorded working directory contains the current
+directory. Details: [importers](importers.md).
 
 When the changes are real, prefer git:
 
@@ -42,17 +51,19 @@ reliable than replaying tool calls.
 
 ## How artifacts are recovered
 
-For Claude Code transcripts, the audit replays `Write`, `Edit`, `MultiEdit`, and
-delete-style tool calls on the baseline:
+For Claude Code and Codex CLI transcripts, the audit replays file operations on the
+baseline:
 
 - `Write` sets the file content.
 - `Edit` applies `old_string` → `new_string` (honoring `replace_all`).
 - `MultiEdit` applies its edits in order.
-- `Read` and `Bash` are recorded as steps but do not modify state.
+- Codex `apply_patch` additions, updates, deletes, and moves are applied in order.
+- `Read`, `Bash`, and `exec_command` are recorded as steps; shell side effects are
+  not reconstructed.
 
 The resulting files are compared to the baseline and passed to the verifiers as
-artifacts. Changes made through `Bash` (for example `rm` or `sed`) are not
-reconstructed; use `--git-repo` for those.
+artifacts. Changes made through arbitrary shell commands (for example `rm` or `sed`)
+are not reconstructed; use `--git-repo` for those.
 
 ### Replay vs workspace
 
@@ -94,8 +105,9 @@ in a temporary copy of the baseline, not a sandbox; only audit repositories you 
 
 ## Test evidence
 
-For a `Bash` / `Shell` step that runs a known test runner (`pytest`, `npm test`,
-`go test`, and similar), the audit infers `test_exit_code` from the step's success
+For a `Bash` / `Shell` / Codex `exec_command` step that runs a known test runner
+(`pytest`, `npm test`, `go test`, and similar), the audit infers `test_exit_code` from
+the step's success
 flag and structured output. Ambiguous output leaves the evidence unset instead of
 guessing. This lets `evidence.claims` catch "all tests pass" when the recorded run
 says otherwise; pass explicit evidence when you have it.
@@ -153,7 +165,11 @@ The Stop hook runs the same audit after each Claude Code turn. See [hooks](hooks
 
 - Reconstructing artifacts from transcripts depends on the tool names and argument
   shapes; custom tools may need an adapter or `--git-repo`.
-- Bash side effects are not replayed.
+- Arbitrary shell side effects are not replayed. Codex `apply_patch` is replayed, but
+  other `exec_command` file writes require `--git-repo`.
+- `--latest` is local-only and reads transcript headers under `~/.claude/projects` and
+  `~/.codex/sessions`; set `ASSAYSTONE_CLAUDE_ROOT` or `ASSAYSTONE_CODEX_ROOT` to
+  override those locations.
 - Test evidence combines the tool's success flag with output summaries. It can still
   be ambiguous; when in doubt, record evidence explicitly.
 - The default rules are code-centric. Ops contracts use the `ops.*` pack at runtime

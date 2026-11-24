@@ -5,6 +5,17 @@ branding:
   icon: check-circle
   color: green
 
+outputs:
+  verdict:
+    description: Overall verdict: pass, fail, or escalate.
+    value: ${{ steps.verify.outputs.verdict }}
+  findings:
+    description: Number of failed or escalated verifier verdicts.
+    value: ${{ steps.verify.outputs.findings }}
+  traces:
+    description: Number of traces evaluated.
+    value: ${{ steps.verify.outputs.traces }}
+
 inputs:
   contract:
     description: Path to the acceptance contract JSON file.
@@ -21,7 +32,7 @@ inputs:
     required: false
     default: "3.11"
   install:
-    description: Optional pip install spec, for example "assaystone==0.4.1". Defaults to installing this action's repository.
+    description: Optional pip install spec, for example "assaystone==0.5.0". Defaults to installing this action's repository.
     required: false
     default: ""
 
@@ -46,6 +57,7 @@ runs:
           python -m pip install "assaystone @ git+https://github.com/${repo}@${ref}"
         fi
     - name: Verify agent traces
+      id: verify
       shell: bash
       run: |
         assaystone verify \

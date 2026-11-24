@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://yellowsand1.github.io/assaystone/sitemap.xml
